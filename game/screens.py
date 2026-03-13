@@ -193,99 +193,89 @@ class TossScreen(Screen):
 
     def draw(self, surf):
         surf.fill(C_BG)
-        # Background oval
-        pygame.draw.ellipse(surf, (15,35,15),
-            (WIN_W//2-280, WIN_H//2-200, 560, 400))
 
-        draw_text(surf, "THE TOSS", self.fonts["big"], C_GOLD,
-                  WIN_W//2, 60, center=True, shadow=True)
-        draw_text(surf, "HEADS = You  ·  TAILS = AI",
-                  self.fonts["small"], C_GREY, WIN_W//2, 100, center=True)
+        ground_y = int(WIN_H * 0.58)
+        draw_stadium_backdrop(surf, ground_y - 170, self._t)
+        draw_ad_ribbon(surf, max(10, ground_y - 204))
 
-        # Player cards
-        for px, name, emoji, col, side in [
-            (WIN_W//2-250, "YOU",   "👤", C_GOLD, "HEADS"),
-            (WIN_W//2+250, "AI",    "🤖", C_BLUE, "TAILS"),
-        ]:
-            rounded_rect(surf, C_CARD, (px-70, 120, 140, 110), radius=12,
-                         border=2, border_color=col)
-            draw_text(surf, emoji,  self.fonts["big"],  col, px, 148, center=True)
-            draw_text(surf, name,   self.fonts["med"],  col, px, 188, center=True)
-            draw_text(surf, side,   self.fonts["tiny"], C_GREY, px, 210, center=True)
+        # outfield
+        pygame.draw.ellipse(surf, (55, 122, 58), (-90, ground_y - 30, WIN_W + 180, 330))
+        pygame.draw.ellipse(surf, (180, 160, 110), (WIN_W//2 - 110, ground_y + 18, 220, 72))
 
-        # Coin
-        cx, cy = WIN_W//2, WIN_H//2 - 40
+        # toss group (presenter, captains, umpire)
+        base_y = ground_y + 72
+        draw_toss_character(surf, WIN_W//2 - 210, base_y, (58, 62, 74), role="presenter", facing=1, scale=1.7)
+        draw_toss_character(surf, WIN_W//2 - 35, base_y - 2, (240, 186, 58), role="captain", facing=1, scale=1.75)
+        draw_toss_character(surf, WIN_W//2 + 95, base_y - 2, (54, 128, 224), role="captain", facing=-1, scale=1.68)
+        draw_toss_character(surf, WIN_W//2 + 220, base_y + 2, (166, 196, 225), role="umpire", facing=-1, scale=1.65)
+
+        draw_text(surf, "MATCH TOSS", self.fonts["big"], C_GOLD,
+                  WIN_W//2, 56, center=True, shadow=True)
+        draw_text(surf, "Broadcast toss view · choose quickly and start the action",
+                  self.fonts["small"], C_CREAM, WIN_W//2, 92, center=True)
+
+        # coin area + phase text
+        cx, cy = WIN_W//2, ground_y + 10
         if self._phase == "call":
-            # Idle coin
-            bob = math.sin(self._t*2)*5
-            pygame.draw.circle(surf, C_GOLD_DARK, (cx, int(cy+bob)), 52)
-            pygame.draw.circle(surf, C_GOLD,      (cx, int(cy+bob)), 50)
-            draw_text(surf, "🪙", self.fonts["huge"], C_GOLD,
-                      cx, int(cy+bob), center=True)
-            draw_text(surf, "Call the toss!", self.fonts["med"], C_CREAM,
-                      WIN_W//2, cy+80, center=True)
-            # Buttons
-            self._heads_btn = pygame.Rect(WIN_W//2-220, cy+110, 200, 52)
-            self._tails_btn = pygame.Rect(WIN_W//2+20,  cy+110, 200, 52)
+            bob = math.sin(self._t*2.6) * 5
+            pygame.draw.circle(surf, C_GOLD_DARK, (cx, int(cy+bob)), 40)
+            pygame.draw.circle(surf, C_GOLD, (cx, int(cy+bob)-2), 38)
+            draw_text(surf, "CALL THE TOSS", self.fonts["med"], C_WHITE, WIN_W//2, cy+48, center=True)
+
+            self._heads_btn = pygame.Rect(WIN_W//2-300, cy+88, 240, 58)
+            self._tails_btn = pygame.Rect(WIN_W//2+60,  cy+88, 240, 58)
+            msg_rect = pygame.Rect(WIN_W//2-130, cy+84, 260, 62)
+            rounded_rect(surf, (17, 39, 66), msg_rect, radius=8, border=2, border_color=(236, 121, 38))
+            draw_text(surf, "MAKE YOUR CALL", self.fonts["med"], C_WHITE, msg_rect.centerx, msg_rect.y+18, center=True)
+
             mx,my = pygame.mouse.get_pos()
-            draw_button(surf, self._heads_btn, "🏏  HEADS (You)",
-                        self.fonts["med"], hover=self._heads_btn.collidepoint(mx,my))
-            draw_button(surf, self._tails_btn, "🤖  TAILS (AI)",
-                        self.fonts["med"], hover=self._tails_btn.collidepoint(mx,my),
-                        color=C_BLUE, text_color=C_WHITE)
+            draw_button(surf, self._heads_btn, "HEADS", self.fonts["big"],
+                        hover=self._heads_btn.collidepoint(mx,my), color=(30, 43, 62), text_color=C_CREAM)
+            draw_button(surf, self._tails_btn, "TAILS", self.fonts["big"],
+                        hover=self._tails_btn.collidepoint(mx,my), color=(30, 43, 62), text_color=C_CREAM)
 
         elif self._phase == "flipping":
-            # Spinning coin animation
-            spin  = self._coin_t * 8
-            squish= abs(math.cos(spin))
-            ry    = int(50 * squish)
-            rx    = 50
-            bob   = -abs(math.sin(self._coin_t*3))*80
-            col   = C_GOLD if math.cos(spin)>0 else C_GREY
-            pygame.draw.ellipse(surf, col,
-                (cx-rx, int(cy+bob)-ry, rx*2, ry*2))
-            draw_text(surf, "Tossing...", self.fonts["med"], C_CREAM,
-                      WIN_W//2, cy+60, center=True)
+            spin = self._coin_t * 10
+            squish = max(0.16, abs(math.cos(spin)))
+            ry = int(38 * squish)
+            bob = -abs(math.sin(self._coin_t * 4)) * 65
+            col = C_GOLD if math.cos(spin) > 0 else C_GREY
+            pygame.draw.ellipse(surf, col, (cx-38, int(cy+bob)-ry, 76, ry*2))
+            draw_text(surf, "TOSS IN AIR...", self.fonts["med"], C_CREAM, WIN_W//2, cy+55, center=True)
 
-        elif self._phase in ("landed","choose","done"):
-            coin   = self._result["coin"]
+        elif self._phase in ("landed", "choose", "done"):
+            coin = self._result["coin"]
             winner = self._result["winner"]
-            # Static coin
-            col = C_GOLD if coin=="HEADS" else C_GREY
-            pygame.draw.circle(surf, col, (cx, cy), 52)
-            pygame.draw.circle(surf, C_WHITE, (cx, cy), 52, 2)
-            label = "H" if coin=="HEADS" else "T"
-            draw_text(surf, label, self.fonts["big"], C_BG, cx, cy, center=True)
-            draw_text(surf, coin,  self.fonts["med"], col, cx, cy+70, center=True)
+            col = C_GOLD if coin == "HEADS" else C_GREY
+            pygame.draw.circle(surf, col, (cx, cy), 38)
+            pygame.draw.circle(surf, C_WHITE, (cx, cy), 38, 2)
+            draw_text(surf, "H" if coin=="HEADS" else "T", self.fonts["big"], C_BG, cx, cy, center=True)
 
-            win_txt = "🎉 YOU WIN THE TOSS!" if winner=="human" else "🤖 AI WINS THE TOSS!"
-            win_col = C_GOLD if winner=="human" else C_BLUE
-            draw_text(surf, win_txt, self.fonts["med"], win_col,
-                      WIN_W//2, cy+105, center=True)
+            win_txt = "YOU WON THE TOSS" if winner == "human" else "AI WON THE TOSS"
+            win_col = C_GOLD if winner == "human" else C_BLUE
+            draw_text(surf, win_txt, self.fonts["big"], win_col, WIN_W//2, cy+52, center=True, shadow=True)
 
             if self._phase == "choose":
-                draw_text(surf, "Choose your innings:",
-                          self.fonts["med"], C_CREAM, WIN_W//2, cy+140, center=True)
-                self._bat_btn  = pygame.Rect(WIN_W//2-220, cy+165, 200, 52)
-                self._bowl_btn = pygame.Rect(WIN_W//2+20,  cy+165, 200, 52)
+                banner = pygame.Rect(WIN_W//2-230, cy+88, 460, 62)
+                rounded_rect(surf, (17, 39, 66), banner, radius=10, border=2, border_color=(236, 121, 38))
+                draw_text(surf, "WHAT WOULD YOU LIKE TO DO?", self.fonts["med"], C_WHITE, banner.centerx, banner.y+19, center=True)
+                self._bat_btn = pygame.Rect(WIN_W//2-300, cy+170, 240, 58)
+                self._bowl_btn = pygame.Rect(WIN_W//2+60, cy+170, 240, 58)
                 mx,my = pygame.mouse.get_pos()
-                draw_button(surf, self._bat_btn,  "🏏  BAT FIRST",
-                            self.fonts["med"], hover=self._bat_btn.collidepoint(mx,my))
-                draw_button(surf, self._bowl_btn, "🎳  BOWL FIRST",
-                            self.fonts["med"], hover=self._bowl_btn.collidepoint(mx,my),
-                            color=C_BLUE, text_color=C_WHITE)
+                draw_button(surf, self._bat_btn, "BAT", self.fonts["big"],
+                            hover=self._bat_btn.collidepoint(mx,my), color=(30, 43, 62), text_color=C_CREAM)
+                draw_button(surf, self._bowl_btn, "BOWL", self.fonts["big"],
+                            hover=self._bowl_btn.collidepoint(mx,my), color=(30, 43, 62), text_color=C_CREAM)
 
             elif self._phase == "done":
                 hr = self.state.human_role
                 ar = self.state.ai_role
-                draw_text(surf, f"👤 YOU → {hr} FIRST   🤖 AI → {ar} FIRST",
-                          self.fonts["med"], C_CREAM, WIN_W//2, cy+145, center=True)
-                self._next_btn = pygame.Rect(WIN_W//2-130, cy+185, 260, 52)
+                draw_text(surf, f"YOU: {hr} FIRST  ·  AI: {ar} FIRST", self.fonts["med"], C_CREAM, WIN_W//2, cy+100, center=True)
+                self._next_btn = pygame.Rect(WIN_W//2-150, cy+146, 300, 54)
                 mx,my = pygame.mouse.get_pos()
-                draw_button(surf, self._next_btn, "NEXT: Field Placement →",
-                            self.fonts["med"], hover=self._next_btn.collidepoint(mx,my))
+                draw_button(surf, self._next_btn, "CONTINUE TO FIELD SETUP", self.fonts["med"],
+                            hover=self._next_btn.collidepoint(mx,my))
 
-        # Auto-proceed if AI won toss
         if self._phase == "landed" and hasattr(self, "_auto_timer"):
             self._auto_timer -= 0.016
             if self._auto_timer <= 0:
@@ -330,6 +320,7 @@ class FieldScreen(Screen):
         gx, gy = 80, WIN_H//2 - gh//2
         gcx, gcy = gx + gw//2, gy + gh//2
         draw_stadium_backdrop(surf, gy-42, self._t)
+        draw_ad_ribbon(surf, max(8, gy-74))
         draw_ground(surf, gcx, gcy, gw//2-10, gh//2-10)
 
         # Batsman at crease
@@ -875,6 +866,7 @@ class MatchScreen(Screen):
         gcx, gcy = self._gcx, self._gcy
 
         draw_stadium_backdrop(surf, gy-46, self._t)
+        draw_ad_ribbon(surf, max(8, gy-78), text="AI VS HUMAN CUP")
 
         # Ground
         draw_ground(surf, gcx, gcy, gw//2-10, gh//2-12)
