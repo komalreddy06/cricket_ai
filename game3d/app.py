@@ -10,12 +10,6 @@ class Cricket3DApp:
         window.color = color.rgb(120, 180, 235)
 
         self.mode = "toss"
-        self.toss_phase = "call"
-        self.message = Text(text="", y=0.35, origin=(0, 0), scale=1.4, color=color.white)
-
-        self.score_text = None
-        self.status_text = None
-        self.shot_btns = None
 
         self._build_world()
         self._build_toss_ui()
@@ -70,7 +64,7 @@ class Cricket3DApp:
 
     def _build_toss_ui(self):
         self._clear_buttons()
-        self.toss_phase = "call"
+
         self.message.text = "MAKE YOUR CALL"
 
         self.heads_btn = Button(text='HEADS', scale=(0.2, 0.08), position=(-0.28, -0.36), color=color.azure)
@@ -80,24 +74,12 @@ class Cricket3DApp:
         self.tails_btn.on_click = lambda: self._resolve_toss('TAILS')
 
     def _resolve_toss(self, call):
-        # Guard against duplicate clicks while Ursina still processes mouse events.
-        if self.toss_phase != "call":
-            return
-        self.toss_phase = "resolved"
 
         coin = random.choice(['HEADS', 'TAILS'])
         human_won = coin == call
         self.message.text = f"COIN: {coin}  |  {'YOU WON THE TOSS' if human_won else 'AI WON THE TOSS'}"
 
-        # Avoid destroying a button in the same click callback frame (can cause UI issues).
-        if self.heads_btn:
-            self.heads_btn.enabled = False
-        if self.tails_btn:
-            self.tails_btn.enabled = False
 
-        invoke(self._show_innings_choice, delay=0.08)
-
-    def _show_innings_choice(self):
         destroy(self.heads_btn)
         destroy(self.tails_btn)
         self.heads_btn = None
@@ -113,7 +95,6 @@ class Cricket3DApp:
         self.mode = 'match'
         self.message.text = f"YOU CHOSE TO {role} FIRST"
 
-        self._clear_buttons()
 
         self.presenter.enabled = False
         self.captain_aus.enabled = False
@@ -127,10 +108,6 @@ class Cricket3DApp:
         camera.position = (0, 11, -21)
         camera.rotation_x = 28
 
-        if self.score_text:
-            destroy(self.score_text)
-        if self.status_text:
-            destroy(self.status_text)
 
         self.score_text = Text(text='IND 0/0   |   OVER 0.0', x=-0.43, y=0.45, scale=1.2)
         self.status_text = Text(text='Select your shot', x=-0.1, y=-0.25, scale=1.1)
