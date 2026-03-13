@@ -11,7 +11,8 @@ class Cricket3DApp:
         window.color = color.rgb(98, 160, 225)
 
         self.mode = "toss"
-        self.toss_phase = "call"
+        self.toss_phase = "call"  # call -> waiting_choice -> choose_innings -> match
+        self.toss_wait = 0.0
         self.current_direction = "STRAIGHT"
 
         self.model = IPLDataModel()
@@ -49,8 +50,12 @@ class Cricket3DApp:
                 b.look_at((0, h, 0))
                 self.stands.append(b)
 
-                c = Entity(model='cube', scale=(0.42, 0.65, 0.42), position=(x * 0.98, h + 0.82, z * 0.98),
-                           color=color.rgb(120 + (i * 3) % 120, 80 + (i * 5) % 140, 90 + (i * 7) % 140))
+                c = Entity(
+                    model='cube',
+                    scale=(0.42, 0.65, 0.42),
+                    position=(x * 0.98, h + 0.82, z * 0.98),
+                    color=color.rgb(120 + (i * 3) % 120, 80 + (i * 5) % 140, 90 + (i * 7) % 140),
+                )
                 self.crowd.append(c)
 
         self.ad_ring = Text(text="  CRICKET AI LEAGUE  " * 9, y=0.48, origin=(0, 0), scale=1.0, color=color.white)
@@ -91,13 +96,14 @@ class Cricket3DApp:
     def _build_toss_ui(self):
         self._clear_buttons()
         self.toss_phase = "call"
+        self.toss_wait = 0.0
         self.message.text = "MAKE YOUR CALL: HEADS OR TAILS"
 
         if self.model.loaded:
             self.data_badge.text = f"IPL dataset loaded: {self.model.rows:,} balls"
             self.data_badge.color = color.lime
         else:
-            self.data_badge.text = "Dataset not found (using fallback priors). Place Kaggle deliveries.csv in /data"
+            self.data_badge.text = "Dataset not found. Put Kaggle deliveries.csv in /data"
             self.data_badge.color = color.orange
 
         self.heads_btn = Button(text='HEADS', scale=(0.2, 0.08), position=(-0.24, -0.37), color=color.azure)
@@ -108,19 +114,29 @@ class Cricket3DApp:
     def _resolve_toss(self, call):
         if self.toss_phase != "call":
             return
-        self.toss_phase = "resolved"
 
+        self.toss_phase = "waiting_choice"
         coin = "HEADS" if random.random() < 0.5 else "TAILS"
         human_won = coin == call
         self.message.text = f"COIN: {coin} | {'YOU WON TOSS' if human_won else 'AI WON TOSS'}"
 
-        self.heads_btn.enabled = False
-        self.tails_btn.enabled = False
-        invoke(self._show_innings_choice, delay=0.08)
+        if self.heads_btn:
+            self.heads_btn.enabled = False
+        if self.tails_btn:
+            self.tails_btn.enabled = False
+
+        self.toss_wait = 0.25
 
     def _show_innings_choice(self):
-        destroy(self.heads_btn)
-        destroy(self.tails_btn)
+        # Safe against repeated calls
+        if self.toss_phase == "choose_innings":
+            return
+
+        self.toss_phase = "choose_innings"
+        if self.heads_btn:
+            destroy(self.heads_btn)
+        if self.tails_btn:
+            destroy(self.tails_btn)
         self.heads_btn = None
         self.tails_btn = None
 
@@ -132,6 +148,7 @@ class Cricket3DApp:
 
     def _start_match(self, role):
         self.mode = "match"
+        self.toss_phase = "match"
         self._clear_buttons()
 
         self.presenter.enabled = False
@@ -193,6 +210,13 @@ class Cricket3DApp:
             for b in self.shot_btns + self.dir_btns:
                 b.disabled = True
             self.status_text.text += " | INNINGS COMPLETE"
+
+    def update(self):
+        # Delayed toss transition managed in update loop for stability.
+        if self.toss_phase == "waiting_choice":
+            self.toss_wait -= time.dt
+            if self.toss_wait <= 0:
+                self._show_innings_choice()
 
     def run(self):
         self.app.run()
