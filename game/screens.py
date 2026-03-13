@@ -329,6 +329,7 @@ class FieldScreen(Screen):
         gw, gh = 480, 420
         gx, gy = 80, WIN_H//2 - gh//2
         gcx, gcy = gx + gw//2, gy + gh//2
+        draw_stadium_backdrop(surf, gy-42, self._t)
         draw_ground(surf, gcx, gcy, gw//2-10, gh//2-10)
 
         # Batsman at crease
@@ -872,6 +873,8 @@ class MatchScreen(Screen):
         gw, gh = 500, 420
         gx, gy = self._gx, self._gy
         gcx, gcy = self._gcx, self._gcy
+
+        draw_stadium_backdrop(surf, gy-46, self._t)
 
         # Ground
         draw_ground(surf, gcx, gcy, gw//2-10, gh//2-12)
