@@ -1,7 +1,8 @@
-"""Run the 3D prototype.
+"""Run the 3D cricket prototype (Panda3D version).
 
-Use the SAME Python interpreter for install + run:
+Install:
     python -m pip install -r requirements_3d.txt
+Run:
     python main_3d.py
 """
 import sys
@@ -9,15 +10,16 @@ import sys
 
 def main() -> int:
     try:
-        from game3d.app import Cricket3DApp
+        from game3d.panda_app import Cricket3DPandaApp
     except ModuleNotFoundError as exc:
-        if exc.name == "ursina":
-            print("ERROR: Ursina is not installed for this Python interpreter.")
+        if exc.name == "direct" or exc.name == "panda3d":
+            print("ERROR: Panda3D is not installed for this Python interpreter.")
             print(f"Run: {sys.executable} -m pip install -r requirements_3d.txt")
             return 1
         raise
 
-    Cricket3DApp().run()
+    app = Cricket3DPandaApp()
+    app.run()
     return 0
 
 
