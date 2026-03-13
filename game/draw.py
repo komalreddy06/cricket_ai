@@ -4,8 +4,62 @@ game/draw.py  —  All drawing functions (ground, players, ball, HUD)
 import pygame, math, random
 from constants import *
 
+
+def draw_stadium_backdrop(surf, horizon_y, t=0.0):
+    """Draw a sky gradient, crowd band, and floodlights for a richer scene."""
+    sky_top = (18, 48, 84)
+    sky_bottom = (110, 150, 190)
+    for y in range(horizon_y):
+        f = y / max(horizon_y, 1)
+        col = (
+            int(sky_top[0] + (sky_bottom[0] - sky_top[0]) * f),
+            int(sky_top[1] + (sky_bottom[1] - sky_top[1]) * f),
+            int(sky_top[2] + (sky_bottom[2] - sky_top[2]) * f),
+        )
+        pygame.draw.line(surf, col, (0, y), (WIN_W, y))
+
+    # Subtle clouds
+    for i in range(5):
+        cx = int((i + 0.5) * WIN_W / 5 + math.sin(t * 0.15 + i) * 30)
+        cy = int(horizon_y * 0.25 + (i % 2) * 35)
+        cl = pygame.Surface((150, 56), pygame.SRCALPHA)
+        pygame.draw.ellipse(cl, (255, 255, 255, 38), (0, 10, 120, 34))
+        pygame.draw.ellipse(cl, (255, 255, 255, 45), (35, 0, 110, 40))
+        surf.blit(cl, (cx - 75, cy))
+
+    # Crowd tiers + tiny seats
+    pygame.draw.rect(surf, (42, 45, 58), (0, horizon_y, WIN_W, 46))
+    pygame.draw.rect(surf, (28, 32, 42), (0, horizon_y + 46, WIN_W, 22))
+    for x in range(0, WIN_W, 9):
+        col = (95 + (x % 30), 95 + (x % 60), 112 + (x % 40))
+        pygame.draw.rect(surf, col, (x, horizon_y + 6 + ((x // 9) % 2), 5, 3))
+
+    # Floodlights
+    for lx in (75, WIN_W - 75):
+        pygame.draw.rect(surf, (155, 165, 185), (lx - 3, horizon_y - 135, 6, 135))
+        pygame.draw.rect(surf, (225, 225, 210), (lx - 22, horizon_y - 150, 44, 12), border_radius=4)
+        glow = pygame.Surface((160, 180), pygame.SRCALPHA)
+        pygame.draw.ellipse(glow, (255, 255, 200, 42), (0, 15, 160, 165))
+        surf.blit(glow, (lx - 80, horizon_y - 5))
+
+
+def draw_ad_ribbon(surf, y, text="CRICKET AI LEAGUE"):
+    """Draw a broadcast-like advertising ribbon across the top stands."""
+    pygame.draw.rect(surf, (10, 14, 20), (0, y, WIN_W, 26))
+    pygame.draw.rect(surf, (45, 130, 200), (0, y + 22, WIN_W, 2))
+    step = 180
+    for i, x in enumerate(range(0, WIN_W + step, step)):
+        label = text if i % 2 == 0 else "BTECH PREMIER"
+        draw_text(surf, label, pygame.font.SysFont("segoeui,arial", 20, bold=True),
+                  (240, 240, 245), x + 12, y + 3)
+
+
 def draw_ground(surf, cx, cy, rx, ry):
     """Draw cricket oval ground with pitch, crease, boundary."""
+    # Turf base
+    pygame.draw.ellipse(surf, (16, 48, 20),
+        (int(cx-rx), int(cy-ry), int(rx*2), int(ry*2)))
+
     # Outer field gradient via concentric ellipses
     for i in range(12, 0, -1):
         f  = i / 12
@@ -13,9 +67,24 @@ def draw_ground(surf, cx, cy, rx, ry):
         pygame.draw.ellipse(surf, g,
             (int(cx-rx*f), int(cy-ry*f), int(rx*f*2), int(ry*f*2)))
 
+    # Mowing stripes (alternate brightness)
+    for i in range(8):
+        band_h = int((ry * 2) / 8)
+        y = int(cy - ry + i * band_h)
+        shade = 18 if i % 2 == 0 else -10
+        stripe_col = (max(0, 40 + shade), max(0, 95 + shade), max(0, 44 + shade))
+        stripe = pygame.Surface((int(rx * 2), band_h), pygame.SRCALPHA)
+        stripe.fill((*stripe_col, 70))
+        mask = pygame.Surface((int(rx * 2), int(ry * 2)), pygame.SRCALPHA)
+        pygame.draw.ellipse(mask, (255, 255, 255, 255), (0, 0, int(rx * 2), int(ry * 2)))
+        stripe.blit(mask, (0, -int(i * band_h)), special_flags=pygame.BLEND_RGBA_MULT)
+        surf.blit(stripe, (int(cx-rx), y))
+
     # Boundary rope
     pygame.draw.ellipse(surf, (255,255,255,60),
         (int(cx-rx+4), int(cy-ry+4), int(rx*2-8), int(ry*2-8)), 2)
+    pygame.draw.ellipse(surf, (230, 200, 145),
+        (int(cx-rx+10), int(cy-ry+10), int(rx*2-20), int(ry*2-20)), 1)
 
     # 30-yard inner circle
     pygame.draw.ellipse(surf, (255,255,255,30),
@@ -26,6 +95,10 @@ def draw_ground(surf, cx, cy, rx, ry):
     pw, ph = 26, int(ry*.56)
     pygame.draw.rect(surf, C_PITCH_STRIP,
         (cx-pw//2, cy-ph//2, pw, ph), border_radius=3)
+    for i in range(6):
+        wx = cx - pw // 2 + 3 + (i % 2) * (pw // 3)
+        wy = cy - ph // 2 + 18 + i * (ph // 8)
+        pygame.draw.ellipse(surf, (165, 126, 75), (wx, wy, pw // 2, max(6, ph // 10)))
     # Crease lines
     pygame.draw.rect(surf, C_WHITE,
         (cx-pw//2-2, cy-ph//2+8, pw+4, 4))
@@ -104,9 +177,43 @@ def draw_bowler(surf, x, y, color=C_BLUE, run_phase=0.0, scale=1.0):
 
 def draw_fielder(surf, x, y, color=(100,180,100), scale=0.7):
     s = scale
+    pygame.draw.ellipse(surf, (0,0,0,65), (int(x-8*s), int(y+6*s), int(16*s), int(5*s)))
     pygame.draw.circle(surf, color, (int(x), int(y)), int(10*s))
     pygame.draw.circle(surf, (200,200,200), (int(x), int(y-14*s)), int(5*s))
     pygame.draw.line(surf, color, (int(x), int(y-9*s)), (int(x), int(y+4*s)), int(2*s))
+
+
+def draw_toss_character(surf, x, y, jersey, skin=(214, 168, 128), role="captain", facing=1, scale=1.0):
+    """Draw a more detailed character for toss scenes."""
+    s = scale
+    pygame.draw.ellipse(surf, (0, 0, 0, 70), (int(x-20*s), int(y+2*s), int(40*s), int(12*s)))
+
+    # legs
+    pant = tuple(max(0, c - 25) for c in jersey)
+    pygame.draw.polygon(surf, pant, [(x-9*s, y-28*s), (x-1*s, y-28*s), (x-3*s, y), (x-13*s, y)])
+    pygame.draw.polygon(surf, pant, [(x+1*s, y-28*s), (x+9*s, y-28*s), (x+13*s, y), (x+3*s, y)])
+    pygame.draw.ellipse(surf, (35, 35, 40), (int(x-16*s), int(y-2*s), int(14*s), int(6*s)))
+    pygame.draw.ellipse(surf, (35, 35, 40), (int(x+2*s), int(y-2*s), int(14*s), int(6*s)))
+
+    # torso
+    pygame.draw.rect(surf, jersey, (int(x-14*s), int(y-56*s), int(28*s), int(30*s)), border_radius=int(6*s))
+    pygame.draw.rect(surf, tuple(min(255, c + 20) for c in jersey),
+                     (int(x-14*s), int(y-56*s), int(28*s), int(8*s)), border_radius=int(4*s))
+
+    # arms
+    arm_dx = 20 * facing * s
+    pygame.draw.line(surf, skin, (int(x-14*s), int(y-48*s)), (int(x-14*s-arm_dx*0.25), int(y-30*s)), int(6*s))
+    pygame.draw.line(surf, skin, (int(x+14*s), int(y-48*s)), (int(x+14*s+arm_dx*0.55), int(y-34*s)), int(6*s))
+
+    # head + hair
+    pygame.draw.circle(surf, skin, (int(x), int(y-68*s)), int(10*s))
+    pygame.draw.arc(surf, (30, 25, 20), (int(x-11*s), int(y-77*s), int(22*s), int(15*s)), 0, math.pi, int(4*s))
+
+    if role == "presenter":
+        pygame.draw.line(surf, (180, 180, 180), (int(x+18*s), int(y-34*s)), (int(x+30*s), int(y-15*s)), int(3*s))
+        pygame.draw.circle(surf, (70, 70, 80), (int(x+32*s), int(y-13*s)), int(5*s))
+    elif role == "umpire":
+        pygame.draw.ellipse(surf, (240, 240, 230), (int(x-13*s), int(y-82*s), int(26*s), int(6*s)))
 
 
 def draw_ball(surf, x, y, r=BALL_R, trail=None):
