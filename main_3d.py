@@ -1,4 +1,8 @@
-"""Main launcher for the 3D-only cricket game."""
+"""
+Run the non-Pygame 3D prototype:
+    pip install ursina
+    python main_3d.py
+"""
 from game3d.app import Cricket3DApp
 
 
