@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>EIE115R01 — SRH Cricket AI: Step-by-Step Documentation</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',Arial,sans-serif;font-size:11pt;color:#1a1a1a;background:#fff;line-height:1.6}
+
+  /* Page breaks for PDF */
+  .page{max-width:210mm;margin:0 auto;padding:18mm 18mm 15mm 18mm}
+  .pb{page-break-before:always;padding-top:18mm}
+
+  /* Cover */
+  .cover{text-align:center;padding:30mm 18mm}
+  .cover-badge{background:#ff6200;color:#fff;font-size:10pt;font-weight:700;letter-spacing:2px;
+    padding:6px 18px;border-radius:20px;display:inline-block;margin-bottom:16px;text-transform:uppercase}
+  .cover h1{font-size:28pt;font-weight:800;color:#ff6200;line-height:1.2;margin-bottom:8px}
+  .cover h2{font-size:14pt;font-weight:600;color:#333;margin-bottom:6px}
+  .cover-sub{font-size:11pt;color:#666;margin-bottom:30px}
+  .cover-box{background:#fff8f4;border:2pt solid #ff6200;border-radius:8px;padding:16px 24px;
+    display:inline-block;text-align:left;margin-bottom:24px}
+  .cover-box p{font-size:10pt;color:#444;margin-bottom:4px}
+  .cover-box strong{color:#ff6200}
+  .cover-line{border:0;border-top:2pt solid #ff6200;margin:24px 0}
+  .cover-footer{font-size:9pt;color:#888}
+
+  /* Headings */
+  h2.section{font-size:16pt;font-weight:800;color:#ff6200;border-bottom:2pt solid #ff6200;
+    padding-bottom:6px;margin:0 0 16px 0;text-transform:uppercase;letter-spacing:0.5px}
+  h3.sub{font-size:12pt;font-weight:700;color:#222;margin:16px 0 8px 0}
+  h4.subsub{font-size:10.5pt;font-weight:700;color:#ff6200;margin:12px 0 6px 0}
+
+  /* Body text */
+  p{margin-bottom:10px;font-size:11pt}
+  ul,ol{margin:0 0 10px 20px}
+  li{margin-bottom:5px;font-size:11pt}
+
+  /* Callout boxes */
+  .box{border-radius:6px;padding:12px 16px;margin:12px 0}
+  .box-what{background:#fff8f4;border-left:4px solid #ff6200}
+  .box-why{background:#f0fff8;border-left:4px solid #00aa55}
+  .box-how{background:#f0f4ff;border-left:4px solid #3366ff}
+  .box-note{background:#fffbe8;border-left:4px solid #ffa500}
+  .box-unit{background:#1a1a1a;color:#fff;border-radius:6px;padding:12px 16px;margin:12px 0}
+  .box label{font-size:9pt;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:4px;color:#888}
+  .box-what label{color:#ff6200}
+  .box-why label{color:#00aa55}
+  .box-how label{color:#3366ff}
+  .box-note label{color:#dd8800}
+  .box-unit label{color:#ffcc00}
+
+  /* Unit badges */
+  .unit-badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:9pt;font-weight:700;
+    letter-spacing:1px;text-transform:uppercase;margin-right:6px;margin-bottom:4px}
+  .u1{background:#00e5ff22;color:#0088aa;border:1px solid #00e5ff66}
+  .u2{background:#ffcc0022;color:#886600;border:1px solid #ffcc0066}
+  .u3{background:#ff44aa22;color:#aa0066;border:1px solid #ff44aa66}
+  .u4{background:#00ff8822;color:#006633;border:1px solid #00ff8866}
+
+  /* Tables */
+  table{width:100%;border-collapse:collapse;margin:10px 0 14px 0;font-size:10pt}
+  th{background:#ff6200;color:#fff;padding:8px 12px;text-align:left;font-weight:700;font-size:9.5pt;letter-spacing:0.3px}
+  td{padding:7px 12px;border-bottom:1px solid #eee;vertical-align:top}
+  tr:nth-child(even) td{background:#fafafa}
+  tr td:first-child{font-weight:600;color:#333}
+
+  /* Step boxes */
+  .step{display:flex;gap:14px;margin:12px 0;align-items:flex-start}
+  .step-num{background:#ff6200;color:#fff;border-radius:50%;width:30px;height:30px;
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12pt;
+    flex-shrink:0;margin-top:2px}
+  .step-body{flex:1}
+  .step-title{font-weight:700;font-size:11.5pt;color:#222;margin-bottom:4px}
+  .step-desc{font-size:11pt;color:#444;line-height:1.6}
+
+  /* Code snippets */
+  code{background:#f4f4f4;border:1px solid #ddd;border-radius:3px;padding:1px 6px;
+    font-family:monospace;font-size:10pt;color:#c0392b}
+  pre{background:#1a1a2e;color:#e0e0e0;border-radius:6px;padding:12px 16px;
+    font-family:monospace;font-size:9.5pt;line-height:1.7;margin:10px 0;overflow:auto}
+  pre .k{color:#ff9944}
+  pre .s{color:#00ff88}
+  pre .c{color:#888}
+
+  /* Flow diagram */
+  .flow{display:flex;flex-direction:column;gap:0;margin:12px 0}
+  .flow-item{display:flex;align-items:stretch;gap:0}
+  .flow-icon{width:44px;display:flex;flex-direction:column;align-items:center;flex-shrink:0}
+  .flow-circle{width:30px;height:30px;border-radius:50%;background:#ff6200;color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:12pt;flex-shrink:0;font-weight:700}
+  .flow-line{width:2px;background:#ffcc0044;flex:1;margin:0 auto;min-height:16px}
+  .flow-content{background:#fff8f4;border:1px solid #ff620022;border-radius:6px;
+    padding:10px 14px;margin-bottom:8px;flex:1}
+  .flow-content strong{color:#ff6200;font-size:10.5pt}
+  .flow-content p{font-size:10pt;color:#555;margin:3px 0 0 0}
+
+  /* Equation box */
+  .eq{background:#f8f8ff;border:1px solid #ccccff;border-radius:6px;padding:10px 16px;
+    text-align:center;font-family:monospace;font-size:11pt;margin:10px 0;color:#2233aa}
+
+  /* Print styles */
+  @media print{
+    body{font-size:10.5pt}
+    .no-print{display:none}
+    .page{padding:12mm 14mm}
+    .pb{page-break-before:always}
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     COVER PAGE
+══════════════════════════════════════ -->
+<div class="page cover">
+  <div class="cover-badge">EIE115R01 — Introduction to Artificial Intelligence</div>
+  <h1>SRH Cricket AI</h1>
+  <h2>Step-by-Step Technical Documentation</h2>
+  <p class="cover-sub">What it does · Why it uses each algorithm · How each unit of the syllabus is applied</p>
+
+  <div class="cover-box">
+    <p><strong>Subject:</strong> EIE115R01 — Introduction to Artificial Intelligence</p>
+    <p><strong>Project:</strong> AI vs Human Cricket Game (SRH Theme)</p>
+    <p><strong>Platform:</strong> Python Flask Backend + Three.js Browser Frontend</p>
+    <p><strong>AI Units:</strong> All 4 Units — Search · CSP/Minimax · Bayesian/MDP · Q-Learning</p>
+    <p><strong>Team:</strong> AI (SRH Sunrisers Hyderabad) vs Human Player</p>
+  </div>
+
+  <hr class="cover-line">
+
+  <table>
+    <tr>
+      <th>Unit</th><th>Topic</th><th>Algorithm Used In Game</th>
+    </tr>
+    <tr><td><span class="unit-badge u1">Unit I</span></td><td>Search Techniques</td><td>A* (fielder path) · BFS (zone coverage) · DFS (shot tree)</td></tr>
+    <tr><td><span class="unit-badge u2">Unit II</span></td><td>CSP &amp; Game Search</td><td>Minimax α-β (bowling/batting) · CSP (field placement)</td></tr>
+    <tr><td><span class="unit-badge u3">Unit III</span></td><td>Bayesian &amp; MDP</td><td>Bayesian Network (shot prediction) · MDP + Value Iteration (strategy)</td></tr>
+    <tr><td><span class="unit-badge u4">Unit IV</span></td><td>Reinforcement Learning</td><td>Q-Learning (AI batting policy) · ε-greedy · Bellman Update</td></tr>
+  </table>
+
+  <p class="cover-footer">
+    Open <strong>http://127.0.0.1:8888/</strong> in browser after running <code>python ai_server.py</code>
+  </p>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     PAGE 2 — ARCHITECTURE
+══════════════════════════════════════ -->
+<div class="page pb">
+  <h2 class="section">1. System Architecture — What It Is</h2>
+
+  <p>The project is a <strong>two-part AI system</strong>: a Python backend that runs all AI algorithms, and a browser-based 3D cricket game as the frontend. The human player interacts with the game in the browser, while the AI player's decisions are made entirely by Python.</p>
+
+  <h3 class="sub">1.1 Why This Architecture?</h3>
+  <div class="box box-why">
+    <label>Why</label>
+    <ul>
+      <li><strong>Python backend</strong> — All 4 syllabus AI units (Search, CSP/Minimax, Bayesian/MDP, Q-Learning) require real algorithmic computation. Python has excellent libraries and makes it easy to implement these cleanly.</li>
+      <li><strong>Browser frontend (HTML + Three.js)</strong> — The 3D cricket game is visualised in the browser so it works on any machine without installing a game engine. The human uses keyboard and mouse to play.</li>
+      <li><strong>Flask HTTP server</strong> — The browser sends HTTP requests to Python for every AI decision. Flask is a minimal Python web framework that handles these cleanly.</li>
+    </ul>
+  </div>
+
+  <h3 class="sub">1.2 How They Connect</h3>
+  <div class="flow">
+    <div class="flow-item">
+      <div class="flow-icon"><div class="flow-circle">👤</div><div class="flow-line"></div></div>
+      <div class="flow-content"><strong>Human Player (Browser)</strong><p>Presses SPACE to bat or clicks pitch to bowl — the game captures this input.</p></div>
+    </div>
+    <div class="flow-item">
+      <div class="flow-icon"><div class="flow-circle">📡</div><div class="flow-line"></div></div>
+      <div class="flow-content"><strong>HTTP Request (fetch API)</strong><p>Browser sends JSON data to <code>http://127.0.0.1:8888/bowl_decision</code> or <code>/shot_decision</code> asking what the AI should do.</p></div>
+    </div>
+    <div class="flow-item">
+      <div class="flow-icon"><div class="flow-circle">🐍</div><div class="flow-line"></div></div>
+      <div class="flow-content"><strong>Flask Python Server</strong><p>Receives the request, runs multiple AI algorithms, and returns a JSON response with the optimal decision.</p></div>
+    </div>
+    <div class="flow-item">
+      <div class="flow-icon"><div class="flow-circle">🎮</div></div>
+      <div class="flow-content"><strong>Game Updates</strong><p>Browser receives the AI decision and animates the ball, batsman, fielders accordingly. Score updates and commentary show what the AI decided.</p></div>
+    </div>
+  </div>
+
+  <h3 class="sub">1.3 File Structure</h3>
+  <table>
+    <tr><th>File</th><th>What It Does</th></tr>
+    <tr><td>ai_server.py</td><td>Flask HTTP server — receives requests, calls AI modules, returns decisions</td></tr>
+    <tr><td>cricket.html</td><td>Complete 3D cricket game — Three.js rendering, human controls, AI display</td></tr>
+    <tr><td>ai/search.py</td><td>Unit I — A*, BFS, DFS implementations</td></tr>
+    <tr><td>ai/csp.py</td><td>Unit II — CSP field placement with backtracking + MRV + LCV</td></tr>
+    <tr><td>ai/minimax.py</td><td>Unit II — Minimax with Alpha-Beta pruning for bowling/batting decisions</td></tr>
+    <tr><td>ai/bayesian.py</td><td>Unit III — Bayesian Network for shot prediction and belief update</td></tr>
+    <tr><td>ai/mdp.py</td><td>Unit III — Markov Decision Process with Value Iteration for match strategy</td></tr>
+    <tr><td>ai/rl.py</td><td>Unit IV — Q-Learning with ε-greedy policy for AI batting</td></tr>
+  </table>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     PAGE 3 — GAME FLOW STEP BY STEP
+══════════════════════════════════════ -->
+<div class="page pb">
+  <h2 class="section">2. Step-by-Step Game Flow</h2>
+  <p>Every time the ball is bowled, the game follows this exact sequence of steps. Each step calls one or more AI algorithms from the syllabus.</p>
+
+  <div class="step"><div class="step-num">1</div><div class="step-body">
+    <div class="step-title">Coin Toss</div>
+    <div class="step-desc">Human calls Heads or Tails. Python generates a uniform random outcome. Winner chooses to Bat First or Bowl First. This determines the role assignment for each innings.</div>
+  </div></div>
+
+  <div class="step"><div class="step-num">2</div><div class="step-body">
+    <div class="step-title">Innings Begins — Role Assignment</div>
+    <div class="step-desc">If the human <strong>bats first</strong>: AI bowls (Python decides every delivery). If the human <strong>bowls first</strong>: AI bats (Python decides every shot). After the first innings, roles swap and a target is set.</div>
+  </div></div>
+
+  <div class="step"><div class="step-num">3</div><div class="step-body">
+    <div class="step-title">AI Decides What to Bowl  [When Human is Batting]</div>
+    <div class="step-desc">Before each ball, the browser sends the current match state (balls remaining, runs to defend, wickets taken, human's shot history) to Python. Python runs <strong>4 algorithms in sequence</strong>:</div>
+  </div></div>
+
+  <table style="margin-left:44px;width:calc(100% - 44px)">
+    <tr><th>Order</th><th>Algorithm</th><th>What It Decides</th></tr>
+    <tr><td>3a</td><td>MDP (Unit III)</td><td>High-level strategy: aggressive / defensive / balanced</td></tr>
+    <tr><td>3b</td><td>Minimax α-β (Unit II)</td><td>Exact delivery type: fast yorker / off-spin / bouncer etc.</td></tr>
+    <tr><td>3c</td><td>Bayesian Network (Unit III)</td><td>Predicts what shot the human is likely to play</td></tr>
+    <tr><td>3d</td><td>CSP Backtracking (Unit II)</td><td>Places 9 fielders in optimal zones based on prediction</td></tr>
+  </table>
+
+  <div class="step"><div class="step-num">4</div><div class="step-body">
+    <div class="step-title">Human Bats — Timing &amp; Direction</div>
+    <div class="step-desc">Ball animates from bowler to pitch. Human presses <strong>SPACE</strong> when the cursor is in the sweet spot of the timing bar. Direction is set with arrow keys or joystick. Shot type (drive/pull/cut/sweep/flick/loft) is selected with keys 1–6.</div>
+  </div></div>
+
+  <div class="step"><div class="step-num">5</div><div class="step-body">
+    <div class="step-title">Cricket Rules Engine — Outcome Calculation</div>
+    <div class="step-desc">Based on timing quality, power, loft, and ball line, the engine applies real cricket laws: Law 22 (Wide), Law 21 (No Ball + Free Hit), Law 19 (Boundary), Law 30 (Bowled), Law 33 (Caught), Law 36 (LBW), Law 38 (Run Out). Result: 0–6 runs or a wicket.</div>
+  </div></div>
+
+  <div class="step"><div class="step-num">6</div><div class="step-body">
+    <div class="step-title">Q-Learning Update  [Unit IV]</div>
+    <div class="step-desc">After each ball, the browser sends the outcome to Python's <code>/learn_update</code> endpoint. Python updates the Q-table using the Bellman equation so the AI improves its batting policy over time.</div>
+  </div></div>
+
+  <div class="step"><div class="step-num">7</div><div class="step-body">
+    <div class="step-title">AI Bats  [When Human is Bowling]</div>
+    <div class="step-desc">Human clicks the pitch to aim and deliver. Python receives the delivery and runs Q-Learning + Minimax + DFS to decide the best shot for the AI batsman (Travis Head, Abhishek Sharma, etc.). The AI plays the shot with animated movement and commentary.</div>
+  </div></div>
+
+  <div class="step"><div class="step-num">8</div><div class="step-body">
+    <div class="step-title">End of Innings — Target Set</div>
+    <div class="step-desc">After the set number of overs (1/3/5) or 10 wickets, the innings ends. The target for the second innings = first innings score + 1. Wagon wheel is displayed for human batting innings.</div>
+  </div></div>
+
+  <div class="step"><div class="step-num">9</div><div class="step-body">
+    <div class="step-title">Final Scorecard</div>
+    <div class="step-desc">After both innings, the winner is declared. A detailed scorecard shows runs, wickets, run rate, and lists all 4 AI algorithms used during the match. The Q-table is saved for the next session so the AI has learned from this game.</div>
+  </div></div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     PAGE 4 — UNIT I: SEARCH
+══════════════════════════════════════ -->
+<div class="page pb">
+  <h2 class="section">3. Unit I — Search Algorithms</h2>
+  <span class="unit-badge u1">Unit I</span> BFS · DFS · A* · Heuristics · Problem Formulation
+
+  <h3 class="sub">3.1 A* Search — Fielder Path Planning</h3>
+
+  <div class="box box-what">
+    <label>What it does</label>
+    <p>When the ball is hit, A* finds the shortest path for a fielder to run from their current position to the ball's landing zone. The field is modelled as a 2D grid of 2-metre cells within the 35-metre boundary circle.</p>
+  </div>
+  <div class="box box-why">
+    <label>Why A* and not BFS or DFS?</label>
+    <p>BFS would explore all cells at equal cost — too slow for a large field. DFS would find a path but not the shortest one. A* uses a heuristic (Euclidean distance to the ball) to guide the search towards the goal first, making it significantly faster while still guaranteeing the optimal path.</p>
+  </div>
+
+  <h4 class="subsub">A* Algorithm (from search.py)</h4>
+  <div class="eq">f(n) = g(n) + h(n)</div>
+  <ul>
+    <li><strong>g(n)</strong> = actual distance the fielder has travelled so far (step cost)</li>
+    <li><strong>h(n)</strong> = Euclidean distance from current cell to ball landing zone (heuristic)</li>
+    <li><strong>f(n)</strong> = estimated total path cost — the cell with lowest f is explored first</li>
+  </ul>
+  <div class="box box-note">
+    <label>Result in game</label>
+    The AI Algorithm Log shows: <strong>"A* (fielder→ball): 7 nodes, h=3.2"</strong> — meaning 7 grid cells were explored to find the optimal route.
+  </div>
+
+  <h3 class="sub">3.2 BFS — Fielder Coverage Zone</h3>
+  <div class="box box-what">
+    <label>What it does</label>
+    <p>BFS explores all grid cells reachable by a fielder within a set number of steps, building a "coverage zone" — the area that fielder can reach to stop the ball.</p>
+  </div>
+  <div class="box box-why">
+    <label>Why BFS here?</label>
+    <p>We need to find ALL reachable cells within a maximum distance, not just the shortest path to one cell. BFS explores level by level (all cells at distance 1, then 2, etc.), which naturally gives us this "reachable zone" answer.</p>
+  </div>
+  <p>In the game: After the ball is hit, BFS determines which fielder is closest and can reach the ball — shown in the log as <strong>"BFS nearest fielder: 6 hops"</strong>.</p>
+
+  <h3 class="sub">3.3 DFS Shot Decision Tree — AI Batting</h3>
+  <div class="box box-what">
+    <label>What it does</label>
+    <p>When the AI (SRH batsman) needs to choose a shot, DFS traverses a decision tree based on the delivery characteristics: length (yorker/bouncer/good-length/full/short) and line (off/middle/leg stump).</p>
+  </div>
+  <div class="box box-why">
+    <label>Why DFS?</label>
+    <p>The shot decision tree is naturally a tree structure. DFS explores one branch completely before backtracking — this matches how a batsman instinctively commits to a shot by following one decision path. The tree is small so DFS is efficient here.</p>
+  </div>
+
+  <table>
+    <tr><th>Delivery</th><th>Line</th><th>DFS Suggests (Attack)</th></tr>
+    <tr><td>Yorker</td><td>Leg stump</td><td>Flick</td></tr>
+    <tr><td>Bouncer</td><td>Off stump</td><td>Cut</td></tr>
+    <tr><td>Good Length</td><td>Off stump</td><td>Drive</td></tr>
+    <tr><td>Full</td><td>Middle</td><td>Loft</td></tr>
+    <tr><td>Short</td><td>Leg stump</td><td>Pull</td></tr>
+  </table>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     PAGE 5 — UNIT II: CSP + MINIMAX
+══════════════════════════════════════ -->
+<div class="page pb">
+  <h2 class="section">4. Unit II — CSP &amp; Game Search</h2>
+  <span class="unit-badge u2">Unit II</span> CSP · Backtracking · Minimax · Alpha-Beta Pruning
+
+  <h3 class="sub">4.1 Minimax with Alpha-Beta Pruning — Bowling Decision</h3>
+
+  <div class="box box-what">
+    <label>What it does</label>
+    <p>When AI needs to bowl, Minimax searches a game tree where the AI (MAX player) trys to maximise wicket probability and economy, while assuming the human batsman (MIN player) will respond optimally. Alpha-Beta pruning removes branches that cannot affect the final decision, reducing computation by ~60–70%.</p>
+  </div>
+  <div class="box box-why">
+    <label>Why Minimax?</label>
+    <p>Cricket is a <strong>two-player adversarial game</strong>. The AI bowler and human batsman have opposing goals. Minimax is specifically designed for such zero-sum games — it guarantees the AI picks the delivery that is best even if the human plays perfectly.</p>
+  </div>
+
+  <h4 class="subsub">Evaluation Function (from minimax.py)</h4>
+  <pre>value = wicket_probability × 15.0 + (5.0 − expected_runs) × 1.5
+<span class="c"># Context modifiers:</span>
+<span class="k">if</span> balls_left ≤ 2 <span class="k">and</span> delivery == <span class="s">"yorker"</span>:
+    wicket_value × 1.6    <span class="c"># Yorker is deadliest at death overs</span>
+<span class="k">if</span> pitch_spin:
+    wicket_value × 1.3    <span class="c"># Spin on a turning pitch</span></pre>
+
+  <div class="box box-note">
+    <label>In the game log</label>
+    "Minimax α-β (depth=5) chose FAST delivery — 80 game-states evaluated, v=3.42 &gt; alt=1.8"
+  </div>
+
+  <h3 class="sub">4.2 Minimax — Batting Decision (AI Batsman)</h3>
+  <div class="box box-what">
+    <label>What it does</label>
+    <p>When AI (Travis Head, Klaasen, etc.) is batting, Minimax also selects the best shot. The evaluation considers: expected runs, wicket risk, and field placement. If fielders block a particular direction, the score for that shot is reduced.</p>
+  </div>
+  <pre>value = expected_runs − wicket_risk × 10.0 − (fielder_coverage_penalty × 1.2)</pre>
+
+  <h3 class="sub">4.3 CSP — Field Placement</h3>
+  <div class="box box-what">
+    <label>What it does</label>
+    <p>After the Bayesian Network predicts which shot the human will play, CSP places 9 fielders into optimal zones. The CSP has 9 variables (F1–F9), 23 possible zone values, and 2 constraints:</p>
+    <ol>
+      <li><strong>No two fielders in the same zone</strong> (uniqueness constraint)</li>
+      <li><strong>At least one slip fielder</strong> (structural constraint)</li>
+    </ol>
+  </div>
+  <div class="box box-why">
+    <label>Why CSP with Backtracking?</label>
+    <p>Field placement is a classic constraint satisfaction problem — we have limited slots, limited zones, and rules about what is and isn't allowed. CSP backtracking with MRV (Minimum Remaining Values) and LCV (Least Constraining Value) ordering solves this optimally in just milliseconds.</p>
+  </div>
+
+  <table>
+    <tr><th>CSP Component</th><th>Description</th><th>Purpose</th></tr>
+    <tr><td>Variables</td><td>F1, F2, … F9</td><td>9 fielder positions to fill</td></tr>
+    <tr><td>Domain</td><td>23 named zones (cover, mid-on, slip, etc.)</td><td>Where each fielder can stand</td></tr>
+    <tr><td>Constraint 1</td><td>No two fielders same zone</td><td>Physically impossible to overlap</td></tr>
+    <tr><td>Constraint 2</td><td>At least one slip</td><td>Catch edge-ball dismissals</td></tr>
+    <tr><td>MRV Heuristic</td><td>Assign fielder with fewest valid zones first</td><td>Fail early — faster solving</td></tr>
+    <tr><td>LCV Heuristic</td><td>Prefer zones that cover predicted shot direction</td><td>Better field for likely shots</td></tr>
+  </table>
+
+  <div class="box box-note">
+    <label>In the game log</label>
+    "CSP: 11-fielder constraints solved in 4ms — drive(40%), pull(30%) coverage optimised"
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     PAGE 6 — UNIT III: BAYESIAN + MDP
+══════════════════════════════════════ -->
+<div class="page pb">
+  <h2 class="section">5. Unit III — Bayesian Networks &amp; MDP</h2>
+  <span class="unit-badge u3">Unit III</span> Bayesian Networks · CPTs · Uncertainty · MDP · Value Iteration
+
+  <h3 class="sub">5.1 Bayesian Network — Shot Prediction</h3>
+
+  <div class="box box-what">
+    <label>What it does</label>
+    <p>Before each ball, the Bayesian Network predicts the probability distribution over what shot the human batsman will play. This is used by CSP to set the field and by Minimax to choose the right delivery. The network also updates its belief after every ball based on what shot the human actually played.</p>
+  </div>
+  <div class="box box-why">
+    <label>Why Bayesian Network?</label>
+    <p>There is <strong>uncertainty</strong> about what shot the human will play. A Bayesian Network models this uncertainty using conditional probability tables (CPTs) — it gives not just one prediction but a <em>probability for each shot</em>. As the human reveals their preferences over the innings, the network updates its beliefs (Bayesian belief update).</p>
+  </div>
+
+  <h4 class="subsub">Network Structure</h4>
+  <table>
+    <tr><th>Node</th><th>Role</th><th>Example</th></tr>
+    <tr><td>DeliveryType</td><td>Parent node — type of ball</td><td>good_length_off, yorker, bouncer</td></tr>
+    <tr><td>ShotType</td><td>Child node — predicted shot</td><td>drive (38%), defend (26%), cut (22%)</td></tr>
+    <tr><td>ShotDirection</td><td>Child of ShotType — ball direction</td><td>cover (40%), mid-off (20%)</td></tr>
+  </table>
+
+  <h4 class="subsub">Bayesian Update Rule (from bayesian.py)</h4>
+  <div class="eq">P(Shot | Delivery, History) ∝ P(History | Shot) · P(Shot | Delivery)</div>
+  <p>After each observed ball, the likelihood <strong>P(History | Shot)</strong> is updated using Laplace smoothing to avoid zero probabilities:</p>
+  <div class="eq">P_posterior(shot) = P_prior(shot) × (count + 1) / (total_obs + |shots|)</div>
+
+  <div class="box box-note">
+    <label>In the game log</label>
+    "Bayesian: P(drive|good_length_off)=0.38, P(boundary|fast,spd=140)=0.18 — field adjusted"
+  </div>
+
+  <h3 class="sub">5.2 Markov Decision Process (MDP) — Match Strategy</h3>
+
+  <div class="box box-what">
+    <label>What it does</label>
+    <p>Before each over, the MDP determines the AI's <strong>bowling strategy</strong>: should it bowl aggressively (targeting wickets) or defensively (minimising runs)? This is the high-level decision that then guides Minimax's delivery selection.</p>
+  </div>
+  <div class="box box-why">
+    <label>Why MDP?</label>
+    <p>The match situation evolves over time — balls remaining, runs to defend, wickets in hand all change every ball. MDP explicitly models this sequential decision-making under uncertainty. Value Iteration computes the optimal policy π*(s) for every possible game state before the match even starts.</p>
+  </div>
+
+  <h4 class="subsub">MDP Components</h4>
+  <table>
+    <tr><th>Component</th><th>Description</th><th>In Cricket</th></tr>
+    <tr><td>States (S)</td><td>All possible game situations</td><td>(balls_remaining, runs_to_defend, wickets_taken)</td></tr>
+    <tr><td>Actions (A)</td><td>Available strategies</td><td>aggressive / defensive / balanced / tricky</td></tr>
+    <tr><td>Transitions (T)</td><td>P(s' | s, a) — stochastic outcomes</td><td>P(wicket | fast_aggressive) = 0.28</td></tr>
+    <tr><td>Rewards (R)</td><td>R(s, a, s')</td><td>+wicket gets high reward, +boundary is penalty</td></tr>
+    <tr><td>Policy π*</td><td>Optimal action for each state</td><td>e.g., "last 2 balls, 10 to defend → AGGRESSIVE"</td></tr>
+  </table>
+
+  <h4 class="subsub">Value Iteration (runs at startup)</h4>
+  <div class="eq">V*(s) = max_a [R(s,a) + γ · Σ T(s,a,s') · V*(s')]</div>
+  <p>The server runs Value Iteration when it starts up (converges in 7 iterations) and stores the optimal value function V*(s) for all states. During the match, looking up the policy for the current state is instant.</p>
+
+  <div class="box box-note">
+    <label>In the game log</label>
+    "MDP: V*(3 balls left, chase 12)=4.2 → π*=aggressive — Minimax will use fast yorker"
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     PAGE 7 — UNIT IV: Q-LEARNING
+══════════════════════════════════════ -->
+<div class="page pb">
+  <h2 class="section">6. Unit IV — Q-Learning (Reinforcement Learning)</h2>
+  <span class="unit-badge u4">Unit IV</span> Q-Learning · ε-greedy · Bellman Equation · Policy Learning
+
+  <h3 class="sub">6.1 What Q-Learning Does in This Game</h3>
+
+  <div class="box box-what">
+    <label>What it does</label>
+    <p>Q-Learning is the AI batting agent's learning system. The AI batsman (Travis Head, Klaasen, etc.) learns which shot to play against each type of delivery over time. It starts by exploring randomly and, as it accumulates experience, increasingly exploits the best shots it has learned.</p>
+  </div>
+  <div class="box box-why">
+    <label>Why Q-Learning?</label>
+    <p>Unlike the other algorithms, Q-Learning requires <strong>no pre-programmed knowledge</strong> about which shot is best. It learns purely through trial and error — playing shots, observing the runs scored (reward), and updating its policy. This is the essence of Reinforcement Learning: the agent learns from interacting with the environment.</p>
+  </div>
+
+  <h3 class="sub">6.2 State, Action, Reward</h3>
+  <table>
+    <tr><th>RL Component</th><th>Definition</th><th>Example</th></tr>
+    <tr><td>State (s)</td><td>Description of the current ball</td><td>("fast", "off_stump", "good_length")</td></tr>
+    <tr><td>Action (a)</td><td>Shot the AI batsman plays</td><td>"drive", "pull", "cut", "loft", "defend" …</td></tr>
+    <tr><td>Reward (r)</td><td>Outcome of playing that shot</td><td>+6 for six, +1 for single, −10 for wicket, −0.5 for dot</td></tr>
+    <tr><td>Q(s,a)</td><td>Quality value of action a in state s</td><td>Q(fast|off_stump|good_length, drive) = 2.34</td></tr>
+  </table>
+
+  <h3 class="sub">6.3 Bellman Update — How the AI Learns</h3>
+  <p>After every ball, the Q-table is updated using the Bellman equation:</p>
+  <div class="eq">Q(s, a) ← Q(s, a) + α · [r + γ · max_a' Q(s', a') − Q(s, a)]</div>
+  <ul>
+    <li><strong>α = 0.12</strong> — Learning rate: how much to update Q from new information</li>
+    <li><strong>γ = 0.90</strong> — Discount factor: future rewards matter but less than immediate ones</li>
+    <li><strong>r</strong> — Reward from this ball (runs scored or wicket penalty)</li>
+    <li><strong>max_a' Q(s', a')</strong> — Best future Q-value (Bellman backup)</li>
+  </ul>
+
+  <h3 class="sub">6.4 ε-Greedy Exploration</h3>
+  <div class="box box-what">
+    <label>How the AI decides which shot to play</label>
+    <ul>
+      <li>With probability <strong>ε</strong> — explore: pick a random valid shot (try something new)</li>
+      <li>With probability <strong>1 − ε</strong> — exploit: pick <code>argmax Q(s, a)</code> (use best learned shot)</li>
+    </ul>
+  </div>
+  <div class="box box-why">
+    <label>Why ε-greedy?</label>
+    <p>If the AI always exploits, it might get stuck in a suboptimal policy (e.g., always driving when pulling is better against short balls). ε forces it to occasionally try other shots and discover better options. ε decays from 0.35 to 0.05 over time — early innings = more exploration, later = more exploitation.</p>
+  </div>
+
+  <h3 class="sub">6.5 Q-Table Persistence</h3>
+  <p>The Q-table is saved to <code>q_table_batting.json</code> after every 6 balls (one over). This means the AI <strong>remembers what it learned in previous games</strong>. If you play multiple matches, the AI gets progressively smarter — fewer random shots, better decision-making.</p>
+
+  <div class="box box-note">
+    <label>In the game log</label>
+    "Q-Learning: Q(fast|off_stump|good_length, drive): 0.843→0.921 r=+4 Bellman update ε=0.28"
+  </div>
+
+  <table>
+    <tr><th>Parameter</th><th>Value</th><th>Meaning</th></tr>
+    <tr><td>States</td><td>48 total</td><td>2 bowl types × 4 lines × 6 lengths = 48</td></tr>
+    <tr><td>Actions</td><td>9 shots</td><td>drive, pull, cut, sweep, flick, loft, defend, back_punch, straight_drive</td></tr>
+    <tr><td>α (learning rate)</td><td>0.12</td><td>Updates Q slowly for stability</td></tr>
+    <tr><td>γ (discount)</td><td>0.90</td><td>Values runs now more than later</td></tr>
+    <tr><td>ε (initial)</td><td>0.35</td><td>35% random exploration at start</td></tr>
+    <tr><td>ε (minimum)</td><td>0.05</td><td>Never stops exploring completely</td></tr>
+    <tr><td>ε decay</td><td>0.92 per over</td><td>Gradually reduces exploration</td></tr>
+  </table>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     PAGE 8 — ALL ALGORITHMS PER BALL
+══════════════════════════════════════ -->
+<div class="page pb">
+  <h2 class="section">7. Every Ball — Algorithm Summary</h2>
+  <p>This table shows exactly which algorithms run for every single ball bowled, whether the human is batting or bowling.</p>
+
+  <h3 class="sub">7.1 When Human is BATTING (AI Bowls)</h3>
+  <table>
+    <tr><th>Step</th><th>Algorithm</th><th>Unit</th><th>Output</th></tr>
+    <tr><td>1</td><td>MDP Value Iteration (pre-computed)</td><td>III</td><td>Strategy: aggressive / defensive / balanced</td></tr>
+    <tr><td>2</td><td>Minimax α-β (depth=5)</td><td>II</td><td>Best delivery type, target coords, speed</td></tr>
+    <tr><td>3</td><td>Bayesian Network prediction</td><td>III</td><td>P(shot | delivery, history) distribution</td></tr>
+    <tr><td>4</td><td>CSP Backtracking (MRV + LCV)</td><td>II</td><td>9 fielder positions covering predicted zones</td></tr>
+    <tr><td>5</td><td>Human swings bat</td><td>Human</td><td>Timing value 0.0–1.0, direction degrees</td></tr>
+    <tr><td>6</td><td>Cricket Rules Engine</td><td>Logic</td><td>Runs 0–6, wicket, wide, no-ball</td></tr>
+    <tr><td>7</td><td>Bayesian belief update</td><td>III</td><td>CPT adjusted for observed shot</td></tr>
+    <tr><td>8</td><td>Q-Learning update</td><td>IV</td><td>Q-table updated (even in bowling role, AI tracks human)</td></tr>
+    <tr><td>9</td><td>A* (fielder chase log)</td><td>I</td><td>Nearest fielder path displayed in log</td></tr>
+  </table>
+
+  <h3 class="sub">7.2 When Human is BOWLING (AI Bats)</h3>
+  <table>
+    <tr><th>Step</th><th>Algorithm</th><th>Unit</th><th>Output</th></tr>
+    <tr><td>1</td><td>Human aims and delivers</td><td>Human</td><td>Target (x, z) on pitch, bowl type (fast/spin)</td></tr>
+    <tr><td>2</td><td>A* state-space encoding</td><td>I</td><td>Ball trajectory modelled as search problem</td></tr>
+    <tr><td>3</td><td>Q-Learning ε-greedy</td><td>IV</td><td>Suggests best shot based on learned policy</td></tr>
+    <tr><td>4</td><td>DFS Shot Tree</td><td>I</td><td>Decision tree confirms shot for this length/line</td></tr>
+    <tr><td>5</td><td>Minimax α-β shot selection</td><td>II</td><td>Final best shot considering field placement</td></tr>
+    <tr><td>6</td><td>Bayesian timing estimate</td><td>III</td><td>AI batsman timing 0.0–1.0 (harder vs fast ball)</td></tr>
+    <tr><td>7</td><td>Cricket Rules Engine</td><td>Logic</td><td>Runs 0–6, wicket</td></tr>
+    <tr><td>8</td><td>Q-Learning Bellman update</td><td>IV</td><td>Q(s,a) updated with observed reward</td></tr>
+    <tr><td>9</td><td>BFS coverage check</td><td>I</td><td>Nearest fielder zone explored in log</td></tr>
+  </table>
+
+  <h3 class="sub">7.3 Summary: Why Each Algorithm Was Chosen</h3>
+  <table>
+    <tr><th>Algorithm</th><th>Problem Type</th><th>Why It Fits</th></tr>
+    <tr><td>A* Search</td><td>Shortest path with heuristic</td><td>Field is a grid; Euclidean heuristic is admissible — guaranteed optimal path faster than BFS</td></tr>
+    <tr><td>BFS</td><td>Reachability in uniform cost graph</td><td>All field positions cost equal time; BFS gives all reachable cells at same cost</td></tr>
+    <tr><td>DFS + Tree</td><td>Decision tree traversal</td><td>Shot selection is a deterministic tree; DFS commits to one branch naturally</td></tr>
+    <tr><td>Minimax α-β</td><td>Adversarial two-player game</td><td>Cricket is adversarial; Minimax handles two opposing objectives; α-β prunes 60–70%</td></tr>
+    <tr><td>CSP</td><td>Assignment with constraints</td><td>Field placement has hard constraints (no overlap, must have slip) — classic CSP</td></tr>
+    <tr><td>Bayesian Network</td><td>Probabilistic inference under uncertainty</td><td>Shot selection is uncertain; Bayes lets us reason with probabilities and update beliefs</td></tr>
+    <tr><td>MDP + Value Iteration</td><td>Sequential decision-making</td><td>Match strategy evolves ball-by-ball — MDP models this stochastic sequence</td></tr>
+    <tr><td>Q-Learning</td><td>Model-free RL — learn by experience</td><td>No prior knowledge of optimal shots — agent discovers policy through reward signals</td></tr>
+  </table>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     PAGE 9 — HOW TO RUN
+══════════════════════════════════════ -->
+<div class="page pb">
+  <h2 class="section">8. How to Run the Project</h2>
+
+  <div class="step"><div class="step-num">1</div><div class="step-body">
+    <div class="step-title">Install Python dependencies</div>
+    <pre>pip install flask flask-cors</pre>
+  </div></div>
+
+  <div class="step"><div class="step-num">2</div><div class="step-body">
+    <div class="step-title">Start the AI server</div>
+    <pre>cd "c:\Users\janga\Documents\New folder (2)"
+python ai_server.py</pre>
+    <div class="step-desc">Wait until you see: <code>* Running on http://127.0.0.1:8888</code></div>
+  </div></div>
+
+  <div class="step"><div class="step-num">3</div><div class="step-body">
+    <div class="step-title">Open the game in browser</div>
+    <pre>http://127.0.0.1:8888/</pre>
+    <div class="step-desc">The cricket game loads. Top-right panel should show <strong>✅ Python AI Online</strong>.</div>
+  </div></div>
+
+  <div class="step"><div class="step-num">4</div><div class="step-body">
+    <div class="step-title">OR just double-click launch.bat</div>
+    <div class="step-desc">This installs Flask, starts the server, and opens the browser in one step.</div>
+  </div></div>
+
+  <h3 class="sub">Verify AI is Working</h3>
+  <p>Open <a href="http://127.0.0.1:8888/status">http://127.0.0.1:8888/status</a> — you should see:</p>
+  <pre>{"status": "ok", "message": "SRH Cricket AI Online ✓",
+ "units": ["I: BFS/DFS/A*", "II: Minimax/CSP", "III: Bayesian/MDP", "IV: Q-Learning"]}</pre>
+
+  <h3 class="sub">Game Controls Quick Reference</h3>
+  <table>
+    <tr><th>Role</th><th>Key</th><th>Action</th></tr>
+    <tr><td rowspan="5">Batting</td><td>1 – 6</td><td>Select shot (Drive / Pull / Cut / Sweep / Flick / Loft)</td></tr>
+    <tr><td>← →</td><td>Aim shot direction (left/right)</td></tr>
+    <tr><td>W</td><td>Toggle loft on/off</td></tr>
+    <tr><td>SPACE</td><td>Hit the ball (timing is critical!)</td></tr>
+    <tr><td>Mouse drag</td><td>Joystick — fine-tune aim direction</td></tr>
+    <tr><td rowspan="4">Bowling</td><td>Mouse move</td><td>Aim on pitch (green ring)</td></tr>
+    <tr><td>Click</td><td>Deliver the ball</td></tr>
+    <tr><td>F</td><td>Switch to Fast bowling</td></tr>
+    <tr><td>S</td><td>Switch to Spin bowling</td></tr>
+  </table>
+
+  <div class="box box-note" style="margin-top:20px">
+    <label>How to save this document as PDF</label>
+    <ol>
+      <li>Open <strong>cricket_guide.html</strong> in your browser</li>
+      <li>Press <strong>Ctrl + P</strong></li>
+      <li>Select <strong>"Save as PDF"</strong> as the printer</li>
+      <li>Set margins to <strong>Minimum</strong> or <strong>None</strong></li>
+      <li>Click <strong>Save</strong></li>
+    </ol>
+  </div>
+</div>
+
+</body>
+</html>

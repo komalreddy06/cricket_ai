@@ -1,0 +1,21 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environment
+venv/
+env/
+.env
+
+# AI data (Q-table resets per session, no need to push)
+# data/q_table_batting.json  ← comment this out if you WANT to save AI progress
+
+# VS Code
+.vscode/
+
+# Windows
+Thumbs.db
+desktop.ini

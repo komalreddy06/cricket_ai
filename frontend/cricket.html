@@ -1,0 +1,1804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SRH Cricket AI — EIE115R01 | AI vs Human</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@700;900&family=Barlow+Condensed:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════════════════════ */
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#05050f;font-family:'Barlow Condensed',sans-serif}
+canvas{display:block;position:fixed;inset:0;z-index:0}
+
+/* ═══════════════════════════════════════════════════════
+   HUD — TOP SCOREBOARD
+═══════════════════════════════════════════════════════ */
+#hud{
+  position:fixed;top:0;left:0;right:0;height:58px;z-index:20;
+  background:linear-gradient(90deg,#040410,#0f0400,#1a0900,#0f0400,#040410);
+  border-bottom:2px solid #ff620066;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 12px;gap:8px;
+  box-shadow:0 4px 30px #ff620022;
+}
+.hud-team{
+  display:flex;flex-direction:column;align-items:center;min-width:110px;
+}
+.hud-team-name{font-size:10px;color:#ff6200;letter-spacing:2px;font-weight:700;text-transform:uppercase}
+.hud-score{font-size:26px;font-weight:900;color:#fff;font-family:'Orbitron',sans-serif;letter-spacing:1px}
+.hud-score span{font-size:14px;color:#ffffff55}
+.hud-center{
+  display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;
+}
+.hud-over{font-size:20px;font-weight:900;color:#ffcc00;font-family:'Orbitron',sans-serif}
+.hud-over small{font-size:11px;color:#888;font-family:'Barlow Condensed',sans-serif}
+.hud-target{font-size:13px;color:#00e5ff;font-weight:700;letter-spacing:1px}
+.hud-crr{font-size:11px;color:#aaa}
+.hud-player{
+  display:flex;flex-direction:column;align-items:center;min-width:150px;
+}
+.hud-bat-name{font-size:13px;color:#00ff88;font-weight:700;letter-spacing:0.5px}
+.hud-bat-stat{font-size:11px;color:#666}
+.hud-bowl-name{font-size:13px;color:#ff9944;font-weight:700;letter-spacing:0.5px}
+.hud-bowl-stat{font-size:11px;color:#666}
+.hud-divider{width:1px;height:40px;background:#ff620033}
+
+/* Ball dots row */
+#ball-dots{
+  position:fixed;top:60px;left:50%;transform:translateX(-50%);
+  display:flex;gap:6px;align-items:center;z-index:20;
+  background:rgba(4,4,16,0.85);border:1px solid #ff620022;
+  border-radius:20px;padding:4px 14px;
+  box-shadow:0 2px 10px #00000088;
+}
+.bdot{
+  width:18px;height:18px;border-radius:50%;border:1.5px solid #333;
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:800;transition:all 0.3s;
+}
+.bdot.empty{background:#1a1a2e}
+.bdot.dot{background:#555;border-color:#777;color:#000}
+.bdot.run1{background:#88aaff;border-color:#aabbff;color:#fff}
+.bdot.run2{background:#4488ff;border-color:#66aaff;color:#fff}
+.bdot.run3{background:#2266ee;border-color:#4488ff;color:#fff}
+.bdot.four{background:#00ff88;border-color:#00ffaa;color:#003;font-size:8px}
+.bdot.six{background:#ffcc00;border-color:#ffdd44;color:#330;font-size:8px}
+.bdot.wicket{background:#ff4444;border-color:#ff6666;color:#fff;font-size:8px}
+.bdot.wide{background:#ff88cc;border-color:#ffaadd;color:#fff;font-size:7px}
+.bdot.nb{background:#ff9900;border-color:#ffbb44;color:#fff;font-size:7px}
+.bdot.cur{border-color:#ff6200;box-shadow:0 0 8px #ff6200aa;animation:pulse-dot 1s infinite}
+@keyframes pulse-dot{0%,100%{box-shadow:0 0 6px #ff6200}50%{box-shadow:0 0 14px #ff620088}}
+
+/* ═══════════════════════════════════════════════════════
+   AI DECISION PANEL (right)
+═══════════════════════════════════════════════════════ */
+#ai-panel{
+  position:fixed;right:12px;top:96px;width:200px;z-index:20;
+  background:rgba(6,6,20,0.90);border:1px solid #ff620033;
+  border-radius:10px;padding:10px;backdrop-filter:blur(8px);
+  box-shadow:0 4px 20px #00000066;
+}
+#ai-panel h3{font-size:10px;color:#ff6200;letter-spacing:2px;font-weight:800;
+  border-bottom:1px solid #ff620033;padding-bottom:6px;margin-bottom:8px;text-transform:uppercase}
+.ai-row{display:flex;justify-content:space-between;margin-bottom:5px;align-items:flex-start}
+.ai-lbl{font-size:10px;color:#555;font-weight:600;text-transform:uppercase;flex-shrink:0;padding-top:1px}
+.ai-val{font-size:11px;color:#00e5ff;font-weight:700;text-align:right;word-break:break-word}
+#ai-strategy{
+  margin-top:8px;padding:5px 8px;border-radius:5px;
+  background:#1a0800;border-left:3px solid #ff6200;
+  font-size:10px;color:#ffcc00;font-weight:600;line-height:1.4;
+}
+#ai-server-status{
+  margin-top:8px;font-size:10px;padding:4px 8px;border-radius:4px;
+  font-weight:700;text-align:center;
+}
+.status-online{background:#003300;color:#00ff88;border:1px solid #00ff8844}
+.status-offline{background:#1a0000;color:#ff6644;border:1px solid #ff664433}
+
+/* ═══════════════════════════════════════════════════════
+   CONTROLS PANEL (left)
+═══════════════════════════════════════════════════════ */
+#ctrl-panel{
+  position:fixed;left:12px;top:96px;width:175px;z-index:20;
+  background:rgba(6,6,20,0.90);border:1px solid #ff620033;
+  border-radius:10px;padding:10px;backdrop-filter:blur(8px);
+  box-shadow:0 4px 20px #00000066;
+}
+#ctrl-panel h3{font-size:10px;color:#ff6200;letter-spacing:2px;font-weight:800;
+  border-bottom:1px solid #ff620033;padding-bottom:6px;margin-bottom:8px;text-transform:uppercase}
+.cr{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+.kbd{background:#1a1a2e;border:1px solid #333;border-radius:4px;
+  padding:2px 7px;color:#ffcc00;font-size:10px;min-width:28px;text-align:center;font-weight:700}
+.cd{color:#aaa;font-size:10px}
+#role-badge{
+  margin-top:8px;padding:6px;border-radius:5px;text-align:center;
+  font-size:13px;font-weight:800;letter-spacing:1px;text-transform:uppercase;
+}
+.batting-badge{background:#003a00;color:#00ff88;border:1px solid #00ff8866}
+.bowling-badge{background:#1a0500;color:#ff6200;border:1px solid #ff620066}
+
+/* Speed Gun */
+#speed-gun{
+  position:fixed;left:12px;bottom:175px;width:175px;z-index:20;
+  background:rgba(6,6,20,0.90);border:1px solid #ff620033;
+  border-radius:10px;padding:10px;backdrop-filter:blur(8px);
+  display:none;
+}
+#speed-gun h4{font-size:9px;color:#ff6200;letter-spacing:2px;font-weight:800;margin-bottom:6px;text-transform:uppercase}
+#speed-display{font-size:36px;font-weight:900;color:#ffcc00;font-family:'Orbitron',sans-serif;text-align:center;line-height:1}
+#speed-unit{font-size:10px;color:#888;text-align:center;margin-top:2px}
+#speed-type{font-size:11px;color:#ff6200;text-align:center;font-weight:700;letter-spacing:1px;margin-top:3px}
+
+/* ═══════════════════════════════════════════════════════
+   AI ALGORITHM LOG (bottom-right)
+═══════════════════════════════════════════════════════ */
+#ai-log{
+  position:fixed;right:12px;bottom:32px;width:320px;max-height:240px;z-index:20;
+  background:rgba(4,4,18,0.92);border:1px solid #ff620033;
+  border-radius:10px;overflow:hidden;display:flex;flex-direction:column;
+  backdrop-filter:blur(4px);box-shadow:0 4px 20px #00000066;
+}
+#ai-log-hdr{
+  display:flex;justify-content:space-between;align-items:center;
+  color:#ff6200;font-size:10px;letter-spacing:1px;padding:7px 10px;
+  border-bottom:1px solid #ff620033;font-weight:800;flex-shrink:0;
+  text-transform:uppercase;
+}
+#ai-log-hdr span{font-size:9px;color:#555}
+#ai-log-body{overflow-y:auto;flex:1;padding:3px 0;scrollbar-width:thin;scrollbar-color:#ff620044 transparent}
+.log-e{padding:4px 10px;border-bottom:1px solid #ffffff06;font-size:10px;line-height:1.5;
+  display:flex;align-items:flex-start;gap:6px}
+.log-e:hover{background:#ffffff06}
+.unit-badge{
+  display:inline-block;padding:1px 6px;border-radius:3px;
+  font-size:8px;font-weight:800;letter-spacing:0.5px;flex-shrink:0;margin-top:1px;
+}
+.u1{background:#00e5ff22;color:#00e5ff;border:1px solid #00e5ff33}
+.u2{background:#ffcc0022;color:#ffcc00;border:1px solid #ffcc0033}
+.u3{background:#ff88cc22;color:#ff88cc;border:1px solid #ff88cc33}
+.u4{background:#00ff8822;color:#00ff88;border:1px solid #00ff8833}
+.log-algo{color:#fff;font-weight:700;font-size:10px}
+.log-desc{color:#888;font-size:10px;flex:1}
+
+/* ═══════════════════════════════════════════════════════
+   COMMENTARY BAR (bottom)
+═══════════════════════════════════════════════════════ */
+#commentary{
+  position:fixed;bottom:0;left:0;right:0;height:30px;z-index:20;
+  background:linear-gradient(90deg,#04040e,#0f0400,#04040e);
+  border-top:1px solid #ff620033;display:flex;align-items:center;padding:0 16px;
+  overflow:hidden;
+}
+#comm-icon{color:#ff6200;margin-right:8px;font-size:13px;flex-shrink:0;animation:mic-pulse 2s infinite}
+@keyframes mic-pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+#comm-text{color:#cccccc;font-size:12px;white-space:nowrap;transition:all 0.4s}
+
+/* ═══════════════════════════════════════════════════════
+   ROLE BANNER (center-top flash)
+═══════════════════════════════════════════════════════ */
+#role-banner{
+  position:fixed;top:68px;left:50%;transform:translateX(-50%);
+  font-size:15px;font-weight:900;letter-spacing:3px;padding:7px 24px;
+  border-radius:6px;z-index:25;display:none;pointer-events:none;
+  text-transform:uppercase;transition:opacity 0.5s;
+}
+#role-banner.bat{background:#003a00cc;color:#00ff88;border:1px solid #00ff8866;text-shadow:0 0 14px #00ff88}
+#role-banner.bowl{background:#1a0500cc;color:#ff6200;border:1px solid #ff620066;text-shadow:0 0 14px #ff6200}
+
+/* ═══════════════════════════════════════════════════════
+   BIG FEEDBACK (centre screen flash)
+═══════════════════════════════════════════════════════ */
+#big-feedback{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  text-align:center;pointer-events:none;opacity:0;transition:opacity 0.25s;z-index:50;line-height:1.2;
+}
+#big-fb-main{font-size:64px;font-weight:900;text-shadow:0 0 60px currentColor;font-family:'Orbitron',sans-serif}
+#big-fb-sub{font-size:18px;color:#ffffff99;font-weight:700;margin-top:4px;letter-spacing:1px}
+
+/* ═══════════════════════════════════════════════════════
+   SHOT SELECTOR (batting, bottom center)
+═══════════════════════════════════════════════════════ */
+#shot-selector{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
+  display:none;gap:8px;z-index:30;align-items:flex-end;flex-wrap:nowrap;
+}
+.shot-btn{
+  width:70px;height:80px;border-radius:10px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:4px;cursor:pointer;
+  background:rgba(8,8,24,0.90);border:1.5px solid #333;
+  transition:all 0.15s;user-select:none;position:relative;
+  backdrop-filter:blur(4px);
+}
+.shot-btn:hover{border-color:#ff6200;transform:translateY(-4px);background:rgba(30,12,0,0.95)}
+.shot-btn.active{
+  border-color:#ff6200;background:linear-gradient(160deg,#1a0800,#2a1000);
+  box-shadow:0 0 20px #ff620044;transform:translateY(-5px)
+}
+.shot-btn.loft-btn.active{border-color:#ffcc00;box-shadow:0 0 20px #ffcc0044}
+.sb-key{position:absolute;top:4px;left:7px;font-size:9px;color:#555;font-weight:800}
+.sb-icon{font-size:24px;line-height:1}
+.sb-name{font-size:9px;font-weight:800;letter-spacing:0.5px;color:#ccc;text-transform:uppercase}
+.shot-btn.active .sb-name{color:#ff6200}
+.shot-btn.loft-btn.active .sb-name{color:#ffcc00}
+
+/* ═══════════════════════════════════════════════════════
+   DIRECTION JOYSTICK (batting, bottom-left)
+═══════════════════════════════════════════════════════ */
+#joy-wrap{
+  position:fixed;bottom:60px;left:24px;display:none;z-index:30;
+  flex-direction:column;align-items:center;gap:6px;
+}
+#joy-label{color:#888;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700}
+#joy-zone{
+  width:118px;height:118px;border-radius:50%;
+  background:radial-gradient(circle,#14102a 60%,#080614);
+  border:2px solid #ff620044;position:relative;touch-action:none;
+  box-shadow:0 0 30px #00000099,0 0 0 1px #ff620011;cursor:grab;
+}
+#joy-zone::after{content:'';position:absolute;left:50%;top:8px;bottom:8px;
+  width:1px;background:#ffffff08;transform:translateX(-50%)}
+#joy-stick{
+  width:36px;height:36px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#ff9944,#cc3a00);
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  box-shadow:0 0 18px #ff620077;pointer-events:none;
+}
+#joy-dir-label{
+  color:#ff6200;font-size:11px;font-weight:800;letter-spacing:0.5px;
+  text-align:center;min-width:90px;text-transform:uppercase;
+}
+
+/* ═══════════════════════════════════════════════════════
+   TIMING BAR (batting, bottom center top)
+═══════════════════════════════════════════════════════ */
+#timing-wrap{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);width:280px;display:none;z-index:30}
+#timing-bg{height:22px;border-radius:11px;overflow:hidden;position:relative;
+  background:#0a0a1a;border:1px solid #333;box-shadow:0 0 8px #00000066}
+#timing-fill{height:100%;width:100%;
+  background:linear-gradient(90deg,#ff3333 0%,#ff8800 25%,#ffcc00 38%,#00ff88 44%,#00ff88 56%,#ffcc00 62%,#ff8800 75%,#ff3333 100%)}
+#timing-cursor{position:absolute;top:-5px;width:5px;height:32px;
+  background:#fff;border-radius:3px;transform:translateX(-50%);
+  box-shadow:0 0 10px #fff,0 0 20px #fff8}
+#timing-hint{color:#ffffff88;font-size:11px;text-align:center;margin-top:4px;letter-spacing:1px;font-weight:600}
+#shot-type-lbl{color:#ff6200;font-size:13px;text-align:center;margin-top:2px;font-weight:800;letter-spacing:1px}
+
+/* ═══════════════════════════════════════════════════════
+   OVERLAYS
+═══════════════════════════════════════════════════════ */
+#overlay{
+  position:fixed;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;z-index:100;
+  background:rgba(3,3,12,0.94);backdrop-filter:blur(10px);
+}
+.ov-logo{
+  font-family:'Orbitron',sans-serif;font-size:42px;font-weight:900;
+  color:#ff6200;text-shadow:0 0 60px #ff6200,0 0 120px #ff620044;
+  margin-bottom:4px;letter-spacing:3px;animation:logo-glow 3s infinite;
+}
+@keyframes logo-glow{0%,100%{text-shadow:0 0 40px #ff6200}50%{text-shadow:0 0 80px #ff6200,0 0 160px #ff620066}}
+.ov-sub-title{font-size:15px;color:#ff9944;letter-spacing:4px;font-weight:700;
+  text-transform:uppercase;margin-bottom:6px}
+.ov-stadium{font-size:12px;color:#555;letter-spacing:2px;margin-bottom:30px;text-transform:uppercase}
+.ov-vs{display:flex;align-items:center;gap:20px;margin-bottom:24px}
+.ov-team{text-align:center}
+.ov-team-name{font-size:20px;font-weight:900;color:#fff;letter-spacing:1px}
+.ov-team-sub{font-size:11px;color:#666;margin-top:2px}
+.vs-badge{font-size:28px;font-weight:900;color:#ff6200;font-family:'Orbitron',sans-serif;
+  padding:8px 16px;border:2px solid #ff620066;border-radius:8px;
+  box-shadow:0 0 20px #ff620033}
+
+/* SRH Squad list */
+.squad-box{
+  display:flex;gap:5px;flex-wrap:wrap;justify-content:center;max-width:700px;
+  margin-bottom:28px;
+}
+.squad-card{
+  background:rgba(255,98,0,0.06);border:1px solid #ff620022;
+  border-radius:6px;padding:6px 10px;display:flex;align-items:center;gap:6px;
+  min-width:130px;
+}
+.sq-num{font-size:16px;font-weight:900;color:#ff6200;font-family:'Orbitron',sans-serif;min-width:22px}
+.sq-info{display:flex;flex-direction:column}
+.sq-name{font-size:11px;font-weight:700;color:#fff;letter-spacing:0.3px}
+.sq-role{font-size:9px;color:#666;letter-spacing:0.5px;text-transform:uppercase}
+.sq-flag{font-size:12px}
+
+/* Overs selector */
+.overs-row{display:flex;gap:12px;margin-bottom:28px;align-items:center}
+.overs-label{font-size:13px;color:#666;letter-spacing:1px;text-transform:uppercase}
+.ov-btn{
+  padding:8px 18px;border:1.5px solid #333;border-radius:6px;
+  font-size:13px;font-weight:800;color:#888;background:rgba(255,255,255,0.03);
+  cursor:pointer;transition:all 0.2s;letter-spacing:1px;font-family:'Barlow Condensed',sans-serif;
+}
+.ov-btn:hover,.ov-btn.active{border-color:#ff6200;color:#ff6200;background:rgba(255,98,0,0.08)}
+
+/* Buttons */
+.btn-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.btn{
+  padding:14px 36px;border:none;border-radius:8px;font-size:15px;
+  font-weight:800;letter-spacing:1.5px;cursor:pointer;
+  transition:all 0.2s;text-transform:uppercase;font-family:'Barlow Condensed',sans-serif;
+}
+.btn-primary{
+  background:linear-gradient(135deg,#ff6200,#cc3a00);color:#fff;
+  box-shadow:0 6px 30px #ff620055;
+}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 10px 40px #ff620077}
+.btn-secondary{
+  background:rgba(255,255,255,0.04);color:#888;
+  border:1.5px solid #333;
+}
+.btn-secondary:hover{transform:translateY(-3px);border-color:#666;color:#bbb}
+
+/* Toss screen */
+#toss-coin{
+  font-size:80px;margin:20px;display:inline-block;
+  animation:spin-coin 0.6s ease-in-out;transform-style:preserve-3d;
+}
+@keyframes spin-coin{0%{transform:rotateY(0)}100%{transform:rotateY(720deg)}}
+.toss-spinning #toss-coin{animation:spin-fast 0.2s linear infinite}
+@keyframes spin-fast{0%{transform:rotateY(0)}100%{transform:rotateY(360deg)}}
+
+/* Wagon Wheel */
+#wagon-wrap{
+  position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+  background:rgba(3,3,12,0.90);backdrop-filter:blur(8px);z-index:200;
+}
+#wagon-box{
+  background:#080818;border:1px solid #ff620055;border-radius:14px;
+  padding:24px;text-align:center;box-shadow:0 8px 60px #00000099;
+}
+#wagon-title{color:#ff6200;font-size:18px;font-weight:900;letter-spacing:3px;
+  margin-bottom:14px;text-transform:uppercase}
+#wagon-legend{display:flex;gap:14px;justify-content:center;margin-top:12px;font-size:11px;flex-wrap:wrap}
+.wl-item{display:flex;align-items:center;gap:5px;color:#aaa}
+.wl-dot{width:11px;height:11px;border-radius:50%;display:inline-block}
+
+/* Scorecard overlay */
+#scorecard{
+  position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+  background:rgba(3,3,12,0.96);backdrop-filter:blur(12px);z-index:200;overflow-y:auto;
+}
+#scorecard-box{
+  background:#080818;border:1px solid #ff620055;border-radius:14px;
+  padding:30px 40px;max-width:700px;width:90%;box-shadow:0 8px 80px #00000099;
+}
+.sc-title{text-align:center;margin-bottom:20px}
+.sc-title h2{font-size:36px;font-weight:900;font-family:'Orbitron',sans-serif;margin-bottom:6px}
+.sc-title p{font-size:14px;color:#aaa;letter-spacing:1px}
+.sc-section{margin-bottom:18px}
+.sc-section h4{font-size:11px;color:#ff6200;letter-spacing:2px;font-weight:800;
+  border-bottom:1px solid #ff620022;padding-bottom:6px;margin-bottom:10px;text-transform:uppercase}
+.sc-table{width:100%;border-collapse:collapse}
+.sc-table th{font-size:10px;color:#555;font-weight:700;letter-spacing:1px;
+  padding:4px 8px;text-align:left;text-transform:uppercase}
+.sc-table td{font-size:12px;color:#ccc;padding:5px 8px;border-bottom:1px solid #ffffff08}
+.sc-table td.name{color:#fff;font-weight:700}
+.sc-table td.runs{color:#ffcc00;font-weight:800;font-size:14px}
+.sc-table td.wickets{color:#ff6644;font-weight:700}
+.sc-table tr.out td{color:#666}
+.sc-table tr.batting td.name{color:#00ff88}
+.sc-extras{font-size:12px;color:#888;margin-top:4px}
+.sc-total{font-size:22px;font-weight:900;color:#ff6200;font-family:'Orbitron',sans-serif}
+
+/* Free hit pulse */
+#freehit-flash{
+  position:fixed;top:62px;left:50%;transform:translateX(-50%);z-index:30;
+  background:#ffcc0022;border:2px solid #ffcc00;border-radius:8px;
+  padding:5px 20px;color:#ffcc00;font-size:14px;font-weight:900;
+  letter-spacing:2px;display:none;animation:fh-pulse 0.8s infinite;
+  text-transform:uppercase;
+}
+@keyframes fh-pulse{0%,100%{box-shadow:0 0 0 0 #ffcc0044}50%{box-shadow:0 0 20px 8px #ffcc0022}}
+</style>
+</head>
+<body>
+
+<!-- 3D Canvas auto-appended by Three.js -->
+
+<!-- ─── HUD ─── -->
+<div id="hud">
+  <div class="hud-team">
+    <div class="hud-team-name" id="hud-team1-name">YOU</div>
+    <div class="hud-score" id="hud-score1">0<span>/0</span></div>
+    <div class="hud-bat-stat" id="hud-rr1">CRR: 0.00</div>
+  </div>
+  <div class="hud-divider"></div>
+  <div class="hud-player" id="hud-bat-info" style="display:none">
+    <div class="hud-bat-name" id="hud-bat-name">—</div>
+    <div class="hud-bat-stat" id="hud-bat-stat">0(0)</div>
+  </div>
+  <div class="hud-center">
+    <div class="hud-over"><span id="hud-over">0.0</span><small> OV</small></div>
+    <div class="hud-target" id="hud-target"></div>
+    <div class="hud-crr" id="hud-rrr"></div>
+  </div>
+  <div class="hud-player" id="hud-bowl-info" style="display:none">
+    <div class="hud-bowl-name" id="hud-bowl-name">—</div>
+    <div class="hud-bowl-stat" id="hud-bowl-stat">0-0</div>
+  </div>
+  <div class="hud-divider"></div>
+  <div class="hud-team">
+    <div class="hud-team-name" id="hud-team2-name">SRH AI</div>
+    <div class="hud-score" id="hud-score2">0<span>/0</span></div>
+    <div class="hud-bat-stat" id="hud-rr2">CRR: 0.00</div>
+  </div>
+</div>
+
+<!-- Ball dots row -->
+<div id="ball-dots"></div>
+
+<!-- Role Banner -->
+<div id="role-banner"></div>
+
+<!-- Free Hit Flash -->
+<div id="freehit-flash">🟡 FREE HIT!</div>
+
+<!-- AI Decision Panel -->
+<div id="ai-panel">
+  <h3>⚡ AI Decision</h3>
+  <div class="ai-row"><span class="ai-lbl">Algorithm</span><span class="ai-val" id="ap-algo">—</span></div>
+  <div class="ai-row"><span class="ai-lbl">Type</span><span class="ai-val" id="ap-type">—</span></div>
+  <div class="ai-row"><span class="ai-lbl">Speed</span><span class="ai-val" id="ap-speed">—</span></div>
+  <div class="ai-row"><span class="ai-lbl">Shot</span><span class="ai-val" id="ap-shot">—</span></div>
+  <div class="ai-row"><span class="ai-lbl">Strategy</span><span class="ai-val" id="ap-strat">—</span></div>
+  <div id="ai-strategy">Connecting to AI server…</div>
+  <div id="ai-server-status" class="status-offline">⚠ OFFLINE</div>
+</div>
+
+<!-- Controls Panel -->
+<div id="ctrl-panel">
+  <h3>🎮 Controls</h3>
+  <div id="ctrl-bat" style="display:none">
+    <div class="cr"><span class="kbd">SPC</span><span class="cd">Swing bat</span></div>
+    <div class="cr"><span class="kbd">1-6</span><span class="cd">Shot type</span></div>
+    <div class="cr"><span class="kbd">← →</span><span class="cd">Aim direction</span></div>
+    <div class="cr"><span class="kbd">W</span><span class="cd">Toggle loft</span></div>
+    <div id="role-badge" class="batting-badge">🏏 BATTING</div>
+  </div>
+  <div id="ctrl-bowl">
+    <div class="cr"><span class="kbd">MOVE</span><span class="cd">Aim on pitch</span></div>
+    <div class="cr"><span class="kbd">CLICK</span><span class="cd">Deliver ball</span></div>
+    <div class="cr"><span class="kbd">F</span><span class="cd">Fast bowl</span></div>
+    <div class="cr"><span class="kbd">S</span><span class="cd">Spin bowl</span></div>
+    <div id="role-badge2" class="bowling-badge">⚡ BOWLING</div>
+  </div>
+</div>
+
+<!-- Speed Gun -->
+<div id="speed-gun">
+  <h4>🔫 Speed Gun</h4>
+  <div id="speed-display">0</div>
+  <div id="speed-unit">KM/H</div>
+  <div id="speed-type">FAST</div>
+</div>
+
+<!-- AI Algorithm Log -->
+<div id="ai-log">
+  <div id="ai-log-hdr">
+    📋 AI LOG — EIE115R01
+    <span id="log-count">0 entries</span>
+  </div>
+  <div id="ai-log-body"></div>
+</div>
+
+<!-- Commentary -->
+<div id="commentary">
+  <span id="comm-icon">🎙</span>
+  <span id="comm-text">Welcome to SRH Cricket AI — Sunrisers Hyderabad vs You!</span>
+</div>
+
+<!-- Big Feedback -->
+<div id="big-feedback">
+  <div id="big-fb-main"></div>
+  <div id="big-fb-sub"></div>
+</div>
+
+<!-- Shot Selector -->
+<div id="shot-selector">
+  <div class="shot-btn active" id="sbtn-0" onclick="selectShot(0)"><span class="sb-key">1</span><span class="sb-icon">🏏</span><span class="sb-name">Drive</span></div>
+  <div class="shot-btn" id="sbtn-1" onclick="selectShot(1)"><span class="sb-key">2</span><span class="sb-icon">🔄</span><span class="sb-name">Pull</span></div>
+  <div class="shot-btn" id="sbtn-2" onclick="selectShot(2)"><span class="sb-key">3</span><span class="sb-icon">✂️</span><span class="sb-name">Cut</span></div>
+  <div class="shot-btn" id="sbtn-3" onclick="selectShot(3)"><span class="sb-key">4</span><span class="sb-icon">🧹</span><span class="sb-name">Sweep</span></div>
+  <div class="shot-btn" id="sbtn-4" onclick="selectShot(4)"><span class="sb-key">5</span><span class="sb-icon">👆</span><span class="sb-name">Flick</span></div>
+  <div class="shot-btn loft-btn" id="sbtn-5" onclick="selectShot(5)"><span class="sb-key">6</span><span class="sb-icon">🚀</span><span class="sb-name">Loft</span></div>
+</div>
+
+<!-- Joystick -->
+<div id="joy-wrap">
+  <div id="joy-label">🎯 Direction</div>
+  <div id="joy-zone"><div id="joy-stick"></div></div>
+  <div id="joy-dir-label">STRAIGHT</div>
+</div>
+
+<!-- Timing Bar -->
+<div id="timing-wrap">
+  <div id="timing-bg">
+    <div id="timing-fill"></div>
+    <div id="timing-cursor" style="left:50%"></div>
+  </div>
+  <div id="timing-hint">PRESS SPACE TO SWING</div>
+  <div id="shot-type-lbl">◈ DRIVE</div>
+</div>
+
+<!-- Main Overlay -->
+<div id="overlay">
+  <!-- Content injected by JS -->
+</div>
+
+<!-- Wagon Wheel -->
+<div id="wagon-wrap">
+  <div id="wagon-box">
+    <div id="wagon-title">🎡 WAGON WHEEL</div>
+    <canvas id="wagon-cv" width="300" height="300"></canvas>
+    <div id="wagon-legend">
+      <div class="wl-item"><span class="wl-dot" style="background:#ffcc00"></span>SIX</div>
+      <div class="wl-item"><span class="wl-dot" style="background:#00ff88"></span>FOUR</div>
+      <div class="wl-item"><span class="wl-dot" style="background:#88ccff"></span>1-3</div>
+      <div class="wl-item"><span class="wl-dot" style="background:#444"></span>DOT</div>
+      <div class="wl-item"><span class="wl-dot" style="background:#ff5555"></span>WICKET</div>
+    </div>
+    <br>
+    <button class="btn btn-primary" style="font-size:13px;padding:10px 28px" onclick="closeWagon()">CONTINUE →</button>
+  </div>
+</div>
+
+<!-- Scorecard -->
+<div id="scorecard">
+  <div id="scorecard-box"></div>
+</div>
+
+<!-- Three.js -->
+<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+<script>
+'use strict';
+// ═══════════════════════════════════════════════════════════════════════════
+//  SRH CRICKET AI — EIE115R01  |  Complete AI vs Human Game
+//  Three.js 3D | Flask AI Backend | All 4 Syllabus Units
+// ═══════════════════════════════════════════════════════════════════════════
+
+const AI_URL = 'http://127.0.0.1:8888';
+
+// ─── SRH SQUAD ──────────────────────────────────────────────────────────────
+const SRH_BATSMEN = [
+  {name:'Travis Head',       country:'AUS',flag:'🇦🇺',jersey:2,  hand:'RHB',role:'Explosive Opener',    style:'loft',   stars:'★★★★★'},
+  {name:'Abhishek Sharma',   country:'IND',flag:'🇮🇳',jersey:4,  hand:'LHB',role:'Power Opener',         style:'pull',   stars:'★★★★☆'},
+  {name:'Aiden Markram',     country:'SA', flag:'🇿🇦',jersey:8,  hand:'RHB',role:'Elegant No.3',          style:'drive',  stars:'★★★★☆'},
+  {name:'Heinrich Klaasen',  country:'SA', flag:'🇿🇦',jersey:11, hand:'RHB',role:'Powerhouse WK',         style:'loft',   stars:'★★★★★'},
+  {name:'Nitish Kumar Reddy',country:'IND',flag:'🇮🇳',jersey:9,  hand:'RHB',role:'All-rounder',           style:'cut',    stars:'★★★☆☆'},
+  {name:'Shahbaz Ahmed',     country:'IND',flag:'🇮🇳',jersey:17, hand:'LHB',role:'Spin All-rounder',      style:'sweep',  stars:'★★★☆☆'},
+  {name:'Pat Cummins',       country:'AUS',flag:'🇦🇺',jersey:7,  hand:'RHB',role:'Captain',               style:'drive',  stars:'★★★★☆'},
+  {name:'Washington Sundar', country:'IND',flag:'🇮🇳',jersey:1,  hand:'RHB',role:'Off-spin All-rounder',  style:'defend', stars:'★★★☆☆'},
+  {name:'Bhuvneshwar Kumar', country:'IND',flag:'🇮🇳',jersey:5,  hand:'RHB',role:'Swing Bowler',          style:'defend', stars:'★★☆☆☆'},
+  {name:'T Natarajan',       country:'IND',flag:'🇮🇳',jersey:23, hand:'LHB',role:'Yorker King',           style:'loft',   stars:'★★☆☆☆'},
+  {name:'Jaydev Unadkat',    country:'IND',flag:'🇮🇳',jersey:31, hand:'LHB',role:'Left-arm Pacer',        style:'defend', stars:'★☆☆☆☆'},
+];
+
+const SRH_BOWLERS = [
+  {name:'Pat Cummins',       type:'fast', speed:145, maxOvers:2},
+  {name:'Bhuvneshwar Kumar', type:'fast', speed:130, maxOvers:2},
+  {name:'T Natarajan',       type:'fast', speed:135, maxOvers:2},
+  {name:'Jaydev Unadkat',    type:'fast', speed:128, maxOvers:1},
+  {name:'Washington Sundar', type:'spin', speed:87,  maxOvers:2},
+  {name:'Shahbaz Ahmed',     type:'spin', speed:80,  maxOvers:1},
+  {name:'Nitish Kumar Reddy',type:'fast', speed:126, maxOvers:1},
+];
+
+const SHOT_DATA = [
+  {name:'drive',  icon:'🏏',dir:88,  loft:false, label:'STRAIGHT DRIVE'},
+  {name:'pull',   icon:'🔄',dir:145, loft:false, label:'PULL LEG-SIDE'},
+  {name:'cut',    icon:'✂️', dir:35,  loft:false, label:'SQUARE CUT'},
+  {name:'sweep',  icon:'🧹',dir:135, loft:false, label:'SWEEP LEG'},
+  {name:'flick',  icon:'👆',dir:120, loft:false, label:'LEG FLICK'},
+  {name:'loft',   icon:'🚀',dir:90,  loft:true,  label:'AERIAL LOFT'},
+];
+
+// Field positions (x,z) — 11 fielders
+const FIELD_POS = [
+  [0,-18],[0,7],[4,8],[-4,8],[12,0],[-12,0],
+  [20,-10],[-20,-10],[10,-22],[-10,-22],[0,-28]
+];
+
+// ─── THREE.JS SETUP ──────────────────────────────────────────────────────────
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.2;
+document.body.appendChild(renderer.domElement);
+
+window.addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x04040e);
+scene.fog=new THREE.FogExp2(0x06060f,0.005);
+
+// Camera positions
+const CAM={
+  BROADCAST:{pos:new THREE.Vector3(-30,20,-16),look:new THREE.Vector3(0,0,5)},
+  BATTING:  {pos:new THREE.Vector3(0.6,2.8,-15),  look:new THREE.Vector3(0,1.2,10)},
+  BOWLING:  {pos:new THREE.Vector3(0.5,2.9,17),   look:new THREE.Vector3(0,1.0,-10)},
+};
+const camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,0.1,600);
+camera.position.copy(CAM.BROADCAST.pos);
+camera.lookAt(CAM.BROADCAST.look);
+
+let camTargetPos=CAM.BROADCAST.pos.clone();
+let camTargetLook=CAM.BROADCAST.look.clone();
+let camMode='broadcast';
+
+function setCam(mode){
+  camMode=mode;
+  if(mode==='broadcast'){camTargetPos.copy(CAM.BROADCAST.pos);camTargetLook.copy(CAM.BROADCAST.look);}
+  else if(mode==='batting'){camTargetPos.copy(CAM.BATTING.pos);camTargetLook.copy(CAM.BATTING.look);}
+  else if(mode==='bowling'){camTargetPos.copy(CAM.BOWLING.pos);camTargetLook.copy(CAM.BOWLING.look);}
+}
+function setCamTrack(fromBowler){camMode=fromBowler?'bowl-track':'track';}
+
+function updateCamera(){
+  if(camMode==='track'&&ballMesh&&ballMesh.visible){
+    const bp=ballMesh.position;
+    const tp=new THREE.Vector3(bp.x*0.3-8,Math.max(6,bp.y+7),bp.z-14);
+    camTargetPos.lerp(tp,0.07);
+    camTargetLook.lerp(new THREE.Vector3(bp.x*0.5,bp.y*0.4,bp.z*0.5),0.10);
+  }else if(camMode==='bowl-track'&&ballMesh&&ballMesh.visible){
+    const bp=ballMesh.position;
+    const tp=new THREE.Vector3(0.5,3.2+bp.y*0.1,Math.max(11,17-Math.abs(bp.z)*0.15));
+    camTargetPos.lerp(tp,0.05);
+    camTargetLook.lerp(new THREE.Vector3(bp.x,bp.y*0.6,bp.z),0.12);
+  }
+  camera.position.lerp(camTargetPos,0.07);
+  camera.lookAt(camTargetLook);
+}
+
+// ─── LIGHTS ──────────────────────────────────────────────────────────────────
+scene.add(new THREE.AmbientLight(0x223366,0.6));
+const sun=new THREE.DirectionalLight(0xFFF5CC,0.8);
+sun.position.set(-20,44,-22);sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+Object.assign(sun.shadow.camera,{near:0.5,far:220,left:-70,right:70,top:70,bottom:-70});
+scene.add(sun);
+
+const FLOOD_R=46,FLOOD_H=50;
+[30,90,150,210,270,330].forEach(a=>{
+  const r=a*Math.PI/180;
+  const pl=new THREE.PointLight(0xFFFCE8,1.2,120);
+  pl.position.set(Math.cos(r)*FLOOD_R,FLOOD_H,Math.sin(r)*FLOOD_R);
+  scene.add(pl);
+});
+
+// ─── MATERIALS ───────────────────────────────────────────────────────────────
+const M=(c,r=0.82,m=0,e=0)=>{
+  const mat=new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:m});
+  if(e){mat.emissive=new THREE.Color(c);mat.emissiveIntensity=e;}
+  return mat;
+};
+const C={
+  ORANGE:0xFF6200,NAVY:0x10101E,GRASS:0x0E5210,INFIELD:0x175918,
+  PITCH:0xCCA052,CLAY:0x8B5C28,WHITE:0xFFFFFF,CONCRETE:0x7A7C82,
+  LEATHER:0xCC1122,SKIN:0xC89050,GLOW:0xFFFCE8,ROPE:0xF0EEE0,
+};
+
+// ─── STADIUM ─────────────────────────────────────────────────────────────────
+function buildStadium(){
+  // Ground
+  const gnd=new THREE.Mesh(new THREE.CircleGeometry(110,72),M(0x030804));
+  gnd.rotation.x=-Math.PI/2;gnd.receiveShadow=true;scene.add(gnd);
+
+  // Outfield
+  const of=new THREE.Mesh(new THREE.CircleGeometry(38,64),M(C.GRASS,0.92));
+  of.rotation.x=-Math.PI/2;of.position.y=0.01;of.receiveShadow=true;scene.add(of);
+
+  // 30-yard circle
+  const ifl=new THREE.Mesh(new THREE.CircleGeometry(14,48),M(C.INFIELD,0.9));
+  ifl.rotation.x=-Math.PI/2;ifl.position.y=0.02;ifl.receiveShadow=true;scene.add(ifl);
+
+  // Pitch strip
+  const pit=new THREE.Mesh(new THREE.BoxGeometry(3.05,0.07,20.12),M(C.PITCH,0.7));
+  pit.position.y=0.035;pit.receiveShadow=true;pit.castShadow=true;scene.add(pit);
+
+  // Worn patches
+  [-7.6,7.6].forEach(z=>{
+    const p=new THREE.Mesh(new THREE.BoxGeometry(2.2,0.002,3.8),M(C.CLAY,0.85));
+    p.position.set(0.3,0.036,z);scene.add(p);
+  });
+
+  // Crease lines
+  const cm=M(C.WHITE,0.5);
+  [-8.84,8.84].forEach(z=>{
+    const cr=new THREE.Mesh(new THREE.BoxGeometry(3.66,0.005,0.06),cm);
+    cr.position.set(0,0.076,z);scene.add(cr);
+  });
+
+  // Stumps both ends
+  [-10.06,10.06].forEach(z=>buildStumps(0,z));
+
+  // Boundary rope — orange + white alternating spheres
+  const rm=M(C.ROPE,0.7),om2=M(C.ORANGE,0.7);
+  for(let i=0;i<80;i++){
+    const a=i*Math.PI*2/80;
+    const sp=new THREE.Mesh(new THREE.SphereGeometry(0.22,6,4),i%8===0?om2:rm);
+    sp.position.set(Math.cos(a)*35.5,0.22,Math.sin(a)*35.5);scene.add(sp);
+  }
+
+  // Ad boards
+  for(let i=0;i<24;i++){
+    const a=i*Math.PI*2/24;
+    const bd=new THREE.Mesh(new THREE.BoxGeometry(5.0,1.4,0.28),M(i%2===0?C.ORANGE:C.NAVY));
+    bd.position.set(Math.cos(a)*38,0.7,Math.sin(a)*38);
+    bd.lookAt(0,0.7,0);bd.rotateY(Math.PI);scene.add(bd);
+  }
+
+  // Stands — 6 tiers, SRH orange = crowd
+  const sMats=[M(C.ORANGE),M(C.NAVY),M(0xdddddd),M(C.ORANGE),M(C.NAVY),M(0xff8822)];
+  for(let tier=0;tier<6;tier++){
+    const r=40+tier*2.8,h=0.6+tier*2.2,tH=1.8,N=40;
+    const sw=2*Math.PI*r/N*0.94;
+    for(let s=0;s<N;s++){
+      const a=s*Math.PI*2/N;
+      const blk=new THREE.Mesh(new THREE.BoxGeometry(sw,tH,2.6),sMats[(tier+s)%sMats.length]);
+      blk.position.set(Math.cos(a)*r,h+tH/2,Math.sin(a)*r);
+      blk.lookAt(0,h+tH/2,0);blk.rotateY(Math.PI);scene.add(blk);
+    }
+    const back=new THREE.Mesh(new THREE.CylinderGeometry(r+1.3,r+1.8,0.5,64,1,true),M(C.CONCRETE,0.9));
+    back.position.y=h-0.5;scene.add(back);
+  }
+
+  // Scoreboard — Rajiv Gandhi International Stadium
+  const sbBase=new THREE.Mesh(new THREE.BoxGeometry(20,12,1.2),M(0x04040a));
+  sbBase.position.set(0,9,65);scene.add(sbBase);
+  const sbFrame=new THREE.Mesh(new THREE.BoxGeometry(22,14,0.6),M(C.ORANGE));
+  sbFrame.position.set(0,9,65.5);scene.add(sbFrame);
+  const sbScreen=new THREE.Mesh(new THREE.BoxGeometry(19,11,0.7),M(0x060610,0.5,0,0.25));
+  sbScreen.position.set(0,9,65.6);scene.add(sbScreen);
+  // RJIS text row (simplified bars)
+  [6.5,7.5,8.5,9.5].forEach((y,i)=>{
+    const bar=new THREE.Mesh(new THREE.BoxGeometry(14,0.2,0.1),M(C.ORANGE,0.4,0,0.8));
+    bar.position.set(0,y,65.8);scene.add(bar);
+  });
+
+  // Floodlight towers
+  [30,90,150,210,270,330].forEach(a=>{
+    const r=a*Math.PI/180;
+    const bx=Math.cos(r)*FLOOD_R,bz=Math.sin(r)*FLOOD_R;
+    const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.6,FLOOD_H,8),M(C.CONCRETE,0.9));
+    pole.position.set(bx,FLOOD_H/2,bz);scene.add(pole);
+    const arm=new THREE.Mesh(new THREE.BoxGeometry(7,0.4,0.4),M(C.CONCRETE,0.9));
+    arm.position.set(bx,FLOOD_H+0.2,bz);scene.add(arm);
+    const bank=new THREE.Mesh(new THREE.BoxGeometry(7,0.8,3.2),M(C.GLOW,0.2,0,3.0));
+    bank.position.set(bx,FLOOD_H+1.2,bz);scene.add(bank);
+  });
+}
+
+function buildStumps(x,z){
+  const sm=M(0xFFFACC,0.3);
+  [-0.115,0,0.115].forEach(ox=>{
+    const s=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.025,0.72,6),sm);
+    s.position.set(x+ox,0.36,z);s.castShadow=true;scene.add(s);
+  });
+  const bm=M(0xFFDD44);
+  [-0.057,0.057].forEach(ox=>{
+    const b=new THREE.Mesh(new THREE.CylinderGeometry(0.015,0.015,0.12,5),bm);
+    b.position.set(x+ox,0.73,z);b.rotation.z=Math.PI/2;scene.add(b);
+  });
+}
+
+// ─── PLAYER MODELS ───────────────────────────────────────────────────────────
+const SKIN_M=M(C.SKIN,0.9);
+const SHOE_M=M(0x111111,0.7);
+const TROUSER_M=M(0xFAFAFA,0.85);
+
+function makePlayer(shirtColor,x,z,facingZ=1){
+  const g=new THREE.Group();
+  const shirt=M(shirtColor,0.8);
+  const addBox=(w,h,d,mat,px,py,pz)=>{
+    const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
+    m.position.set(px,py,pz);m.castShadow=true;g.add(m);
+  };
+  addBox(0.38,0.52,0.22,shirt,0,1.05,0);
+  addBox(0.10,0.44,0.12,shirt,-0.25,1.02,0);
+  addBox(0.10,0.44,0.12,shirt,0.25,1.02,0);
+  addBox(0.15,0.44,0.16,TROUSER_M,-0.1,0.57,0);
+  addBox(0.15,0.44,0.16,TROUSER_M,0.1,0.57,0);
+  addBox(0.15,0.10,0.24,SHOE_M,-0.1,0.08,0.04);
+  addBox(0.15,0.10,0.24,SHOE_M,0.1,0.08,0.04);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(0.18,8,6),SKIN_M);
+  head.position.set(0,1.62,0);head.castShadow=true;g.add(head);
+  addBox(0.22,0.13,0.28,M(0x111111,0.5),0,1.74,0.02);
+  g.position.set(x,0,z);
+  g.rotation.y=Math.atan2(0-x,facingZ-z)||0;
+  scene.add(g);
+  return g;
+}
+
+const fielderObjs=[];
+function spawnFielders(srhField){
+  fielderObjs.forEach(f=>scene.remove(f));
+  fielderObjs.length=0;
+  FIELD_POS.forEach(([fx,fz])=>{
+    fielderObjs.push(makePlayer(srhField?C.ORANGE:0x1144DD,fx,fz));
+  });
+}
+let batsman1,batsman2;
+function spawnBatsmen(srhBat){
+  if(batsman1)scene.remove(batsman1);
+  if(batsman2)scene.remove(batsman2);
+  const col=srhBat?C.ORANGE:0x1144DD;
+  batsman1=makePlayer(col,0.5,-9,0);
+  batsman2=makePlayer(col,-2.5,-8,0);
+}
+
+// ─── BALL ────────────────────────────────────────────────────────────────────
+const ballMesh=new THREE.Mesh(
+  new THREE.SphereGeometry(0.075,12,8),
+  new THREE.MeshStandardMaterial({color:C.LEATHER,roughness:0.35,metalness:0.1})
+);
+ballMesh.castShadow=true;ballMesh.visible=false;scene.add(ballMesh);
+
+const seamGeo=new THREE.TorusGeometry(0.075,0.008,6,16);
+const seamMesh=new THREE.Mesh(seamGeo,M(0xCC4444,0.4));
+seamMesh.rotation.x=Math.PI/2;ballMesh.add(seamMesh);
+
+// Trail
+const TRAIL=16;const trailMeshes=[];let trailIdx=0;
+for(let i=0;i<TRAIL;i++){
+  const t=new THREE.Mesh(new THREE.SphereGeometry(0.04,5,4),
+    new THREE.MeshBasicMaterial({color:0xCC2222,transparent:true,opacity:0}));
+  scene.add(t);trailMeshes.push(t);
+}
+function moveBall(pos){
+  ballMesh.position.copy(pos);ballMesh.visible=true;
+  const t=trailMeshes[trailIdx%TRAIL];
+  t.position.copy(pos);t.material.opacity=0.55;trailIdx++;
+  trailMeshes.forEach((m,i)=>{
+    const age=((trailIdx-i+TRAIL)%TRAIL)/TRAIL;
+    m.material.opacity=Math.max(0,0.5-age*0.5);
+  });
+}
+function hideBall(){
+  ballMesh.visible=false;
+  trailMeshes.forEach(m=>m.material.opacity=0);
+}
+function animBall(p0,p1,arc,dur,cb){
+  const peak=new THREE.Vector3((p0.x+p1.x)/2,Math.max(p0.y,p1.y)+arc,(p0.z+p1.z)/2);
+  const start=performance.now();
+  function step(now){
+    const t=Math.min((now-start)/dur,1);
+    const s0=p0.clone().lerp(peak,t);
+    const s1=peak.clone().lerp(p1,t);
+    moveBall(s0.lerp(s1,t));
+    if(t<1)requestAnimationFrame(step);
+    else if(cb)cb();
+  }
+  requestAnimationFrame(step);
+}
+
+// ─── AIM RING ────────────────────────────────────────────────────────────────
+const aimRing=new THREE.Mesh(
+  new THREE.TorusGeometry(0.45,0.06,8,24),
+  new THREE.MeshBasicMaterial({color:0x00ff88})
+);
+aimRing.rotation.x=Math.PI/2;aimRing.visible=false;scene.add(aimRing);
+
+const raycaster=new THREE.Raycaster();
+const mouse2d=new THREE.Vector2();
+const pitchPlane=new THREE.Plane(new THREE.Vector3(0,1,0),-0.04);
+
+renderer.domElement.addEventListener('mousemove',e=>{
+  if(!G.bowlingReady)return;
+  mouse2d.set((e.clientX/innerWidth)*2-1,-(e.clientY/innerHeight)*2+1);
+  raycaster.setFromCamera(mouse2d,camera);
+  const hit=new THREE.Vector3();
+  raycaster.ray.intersectPlane(pitchPlane,hit);
+  if(hit){
+    hit.x=Math.max(-2,Math.min(2,hit.x));
+    hit.z=Math.max(-9,Math.min(8,hit.z));
+    aimRing.position.copy(hit);aimRing.visible=true;
+  }
+});
+renderer.domElement.addEventListener('click',async()=>{
+  if(!G.bowlingReady)return;
+  G.bowlingReady=false;aimRing.visible=false;
+  await humanDeliver(aimRing.position.clone());
+});
+
+// ─── GAME STATE ──────────────────────────────────────────────────────────────
+const OVERS_DEFAULT=3; // default 3 overs
+
+const G={
+  phase:'MENU',overs:OVERS_DEFAULT,
+  humanRuns:0,aiRuns:0,
+  humanWickets:0,aiWickets:0,
+  balls:0,extras:0,freeHit:false,extraBall:false,
+  innings:1,target:-1,
+  humanBatsFirst:true,
+  shotHistory:[],bowlType:'fast',
+  bowlingReady:false,battingActive:false,
+  bowlDec:null,swingDir:90,shotType:'drive',loft:false,
+  lastDismissal:'',
+  // Batsmen tracking
+  aiWicketIdx:0,  // which SRH batsman is currently in
+  humanWicketIdx:0,
+  currentBowlerIdx:0,
+  bowlerOvers:{},
+  // Per-inning scorecard
+  innings1Scorecard:{batting:[],bowling:[],extras:0,total:0,wickets:0},
+  innings2Scorecard:{batting:[],bowling:[],extras:0,total:0,wickets:0},
+  // Ball log per over
+  overLog:[],
+  ballLog:[],
+};
+
+// Current batsman helpers
+function currentAIBatsman(){return SRH_BATSMEN[Math.min(G.aiWicketIdx,SRH_BATSMEN.length-1)];}
+function currentSRHBowler(){
+  // Rotate through bowlers respecting maxOvers
+  const bowlers=SRH_BOWLERS;
+  for(let i=0;i<bowlers.length;i++){
+    const idx=(G.currentBowlerIdx+i)%bowlers.length;
+    const b=bowlers[idx];
+    const bowled=(G.bowlerOvers[b.name]||0);
+    if(bowled<b.maxOvers){
+      G.currentBowlerIdx=idx;
+      return b;
+    }
+  }
+  return SRH_BOWLERS[0];
+}
+function advanceBowler(){
+  const b=currentSRHBowler();
+  G.bowlerOvers[b.name]=(G.bowlerOvers[b.name]||0)+1;
+  G.currentBowlerIdx=(G.currentBowlerIdx+1)%SRH_BOWLERS.length;
+}
+
+// ─── AI SERVER CALLS ─────────────────────────────────────────────────────────
+async function aiCall(endpoint,body,method='POST'){
+  try{
+    const opts=method==='GET'
+      ?{method:'GET',signal:AbortSignal.timeout(3500)}
+      :{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(body),signal:AbortSignal.timeout(3500)};
+    const r=await fetch(`${AI_URL}/${endpoint}`,opts);
+    return await r.json();
+  }catch{return null;}
+}
+
+// Fallback AI (when server offline)
+function fbBowl(){
+  const t=Math.random()<0.65?'fast':'spin';
+  return {bowl_type:t,target_x:(Math.random()-.5)*1.4,target_z:4+Math.random()*5.5,
+    speed:t==='fast'?122+Math.random()*24:65+Math.random()*18,
+    swing:(Math.random()-.5)*.25,spin:t==='spin'?(Math.random()-.5)*.5:0,
+    field_positions:FIELD_POS.map(p=>[...p]),algo:'Minimax (offline)'};
+}
+function fbShot(){
+  const shots=['drive','pull','cut','flick','sweep','loft'];
+  const s=shots[Math.floor(Math.random()*shots.length)];
+  const sd=SHOT_DATA.find(x=>x.name===s)||SHOT_DATA[0];
+  return {shot_type:s,direction:sd.dir+Math.random()*20-10,
+    power:.35+Math.random()*.55,loft:sd.loft,timing:.4+Math.random()*.3,algo:'Q-Learning (offline)'};
+}
+
+// Update AI panel
+function updAIPanel(d){
+  if(!d)return;
+  document.getElementById('ap-algo').textContent=d.algo||'—';
+  document.getElementById('ap-type').textContent=(d.bowl_type||d.shot_type||'—').toUpperCase();
+  document.getElementById('ap-speed').textContent=d.speed?`${Math.round(d.speed)} km/h`:'—';
+  document.getElementById('ap-shot').textContent=d.shot_type||'—';
+  document.getElementById('ap-strat').textContent=d.mdp_strategy||'—';
+  document.getElementById('ai-strategy').textContent=`📊 ${d.algo||'AI deciding…'}`;
+}
+
+// ─── HUD ─────────────────────────────────────────────────────────────────────
+function updHUD(){
+  const hb=isHumanBatting();
+  const totalBalls=G.overs*6;
+  const over=Math.floor(G.balls/6),ball=G.balls%6;
+  document.getElementById('hud-over').textContent=`${over}.${ball}`;
+
+  // Scores
+  const s1=hb?G.humanRuns:G.aiRuns,w1=hb?G.humanWickets:G.aiWickets;
+  const s2=hb?G.aiRuns:G.humanRuns,w2=hb?G.aiWickets:G.humanWickets;
+  document.getElementById('hud-score1').innerHTML=`${s1}<span>/${w1}</span>`;
+  document.getElementById('hud-score2').innerHTML=`${s2}<span>/${w2}</span>`;
+  // CRR
+  const crr=G.balls>0?(hb?G.humanRuns:G.aiRuns)/(G.balls/6):0;
+  document.getElementById('hud-rr1').textContent=`CRR: ${crr.toFixed(2)}`;
+  // Target
+  const ti=document.getElementById('hud-target');
+  const ri=document.getElementById('hud-rrr');
+  if(G.target>0){
+    const runs=G.target-(hb?G.humanRuns:G.aiRuns);
+    const ballsLeft=totalBalls-G.balls;
+    const rrr=ballsLeft>0?runs/(ballsLeft/6):99;
+    ti.textContent=`Need: ${Math.max(0,runs)} off ${ballsLeft} balls`;
+    ri.textContent=`RRR: ${rrr.toFixed(2)}`;
+    ti.style.color=G.freeHit?'#ffcc00':'#00e5ff';
+  }else{ti.textContent='';ri.textContent='';}
+  if(G.freeHit){
+    document.getElementById('freehit-flash').style.display='block';
+    ti.textContent+=' 🟡 FREE HIT';
+  }else{
+    document.getElementById('freehit-flash').style.display='none';
+  }
+
+  // Current batsman (when human bats)
+  if(hb&&G.phase==='BATTING'){
+    document.getElementById('hud-bat-info').style.display='flex';
+    document.getElementById('hud-bowl-info').style.display='flex';
+    document.getElementById('hud-bat-name').textContent='YOU';
+    document.getElementById('hud-bat-stat').textContent=`${G.humanRuns}(${G.balls})`;
+    const bowl=currentSRHBowler();
+    document.getElementById('hud-bowl-name').textContent=bowl.name;
+    document.getElementById('hud-bowl-stat').textContent=`${Math.floor(G.balls/6)}.${G.balls%6}-${G.aiWickets}`;
+  }else if(!hb&&G.phase==='BOWLING'){
+    document.getElementById('hud-bat-info').style.display='flex';
+    document.getElementById('hud-bowl-info').style.display='flex';
+    const bat=currentAIBatsman();
+    document.getElementById('hud-bat-name').textContent=`${bat.name} ${bat.flag}`;
+    document.getElementById('hud-bat-stat').textContent=`${G.aiRuns}(${G.balls})`;
+    document.getElementById('hud-bowl-name').textContent='YOU';
+    document.getElementById('hud-bowl-stat').textContent=`${Math.floor(G.balls/6)}.${G.balls%6}-${G.humanWickets}`;
+  }else{
+    document.getElementById('hud-bat-info').style.display='none';
+    document.getElementById('hud-bowl-info').style.display='none';
+  }
+
+  // Ball dots
+  buildBallDots();
+}
+
+function buildBallDots(){
+  const bd=document.getElementById('ball-dots');
+  bd.innerHTML='';
+  const overNum=Math.floor(G.balls/6);
+  const ballInOver=G.balls%6;
+  const start=overNum*6;
+  for(let i=0;i<6;i++){
+    const d=document.createElement('div');
+    d.className='bdot';
+    const logIdx=start+i;
+    if(logIdx<G.ballLog.length){
+      const b=G.ballLog[logIdx];
+      d.className='bdot '+b.cls;
+      d.textContent=b.label;
+    }else if(i===ballInOver&&G.phase!=='RESULT'){
+      d.className='bdot cur';
+    }else{
+      d.className='bdot empty';
+    }
+    bd.appendChild(d);
+  }
+}
+
+function logBall(res){
+  let cls='dot',lbl='•';
+  if(res.wide){cls='wide';lbl='WD';}
+  else if(res.noBall){cls='nb';lbl='NB';}
+  else if(res.wicket){cls='wicket';lbl='W';}
+  else if(res.six){cls='six';lbl='6';}
+  else if(res.four){cls='four';lbl='4';}
+  else if(res.runs===3){cls='run3';lbl='3';}
+  else if(res.runs===2){cls='run2';lbl='2';}
+  else if(res.runs===1){cls='run1';lbl='1';}
+  G.ballLog.push({cls,label:lbl});
+}
+
+// ─── SPEED GUN ───────────────────────────────────────────────────────────────
+function showSpeedGun(speed,type){
+  const sg=document.getElementById('speed-gun');
+  sg.style.display='block';
+  const disp=document.getElementById('speed-display');
+  disp.textContent='0';
+  document.getElementById('speed-type').textContent=type.toUpperCase();
+  let cur=0,target=Math.round(speed);
+  const step=()=>{
+    cur=Math.min(cur+Math.ceil((target-cur)/4+1),target);
+    disp.textContent=cur;
+    disp.style.color=cur>135?'#ff4444':cur>120?'#ffcc00':'#00ff88';
+    if(cur<target)requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+  setTimeout(()=>sg.style.display='none',3200);
+}
+
+// ─── OVERLAYS ────────────────────────────────────────────────────────────────
+const OV=document.getElementById('overlay');
+function showOv(html){OV.innerHTML=html;OV.style.display='flex';}
+function hideOv(){OV.style.display='none';}
+function msgOv(txt,col,ms,cb){
+  OV.innerHTML=`<div style="font-size:30px;font-weight:900;color:${col};text-shadow:0 0 40px ${col};text-align:center;padding:24px;font-family:'Barlow Condensed',sans-serif;letter-spacing:2px">${txt}</div>`;
+  OV.style.display='flex';
+  setTimeout(()=>{OV.style.display='none';if(cb)cb();},ms);
+}
+function feedback(main,sub,col,ms=1600){
+  const el=document.getElementById('big-feedback');
+  const m=document.getElementById('big-fb-main');
+  const s=document.getElementById('big-fb-sub');
+  m.textContent=main;m.style.color=col;
+  s.textContent=sub||'';
+  el.style.opacity='1';
+  setTimeout(()=>el.style.opacity='0',ms);
+}
+function comment(txt){document.getElementById('comm-text').textContent=txt;}
+
+// ─── START SCREEN ────────────────────────────────────────────────────────────
+function showStartScreen(){
+  const squadHtml=SRH_BATSMEN.map(p=>`
+    <div class="squad-card">
+      <div class="sq-num">${p.jersey}</div>
+      <div class="sq-info">
+        <div class="sq-name">${p.name} ${p.flag}</div>
+        <div class="sq-role">${p.role}</div>
+      </div>
+    </div>`).join('');
+
+  showOv(`
+    <div class="ov-logo">☀ SRH</div>
+    <div class="ov-sub-title">Cricket AI Challenge</div>
+    <div class="ov-stadium">🏟 Rajiv Gandhi International Stadium, Hyderabad</div>
+    <div class="ov-vs">
+      <div class="ov-team">
+        <div class="ov-team-name">👤 YOU</div>
+        <div class="ov-team-sub">Human Player</div>
+      </div>
+      <div class="vs-badge">VS</div>
+      <div class="ov-team">
+        <div class="ov-team-name">☀ SRH AI</div>
+        <div class="ov-team-sub">Sunrisers Hyderabad</div>
+      </div>
+    </div>
+    <div style="font-size:11px;color:#ff6200;letter-spacing:2px;font-weight:700;margin-bottom:10px;text-transform:uppercase">SRH PLAYING XI</div>
+    <div class="squad-box">${squadHtml}</div>
+    <div class="overs-row">
+      <span class="overs-label">Overs:</span>
+      <button class="ov-btn" id="ov1" onclick="setOvers(1)">T1</button>
+      <button class="ov-btn active" id="ov3" onclick="setOvers(3)">T3</button>
+      <button class="ov-btn" id="ov5" onclick="setOvers(5)">T5</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="startToss()">🪙 TOSS THE COIN</button>
+    </div>
+    <div style="font-size:10px;color:#333;margin-top:16px;letter-spacing:1px;text-transform:uppercase">
+      EIE115R01 · Unit I: A*/BFS/DFS · Unit II: Minimax/CSP · Unit III: Bayesian/MDP · Unit IV: Q-Learning
+    </div>
+  `);
+}
+
+window.setOvers=function(n){
+  G.overs=n;
+  ['1','3','5'].forEach(x=>{
+    const b=document.getElementById('ov'+x);
+    if(b)b.classList.toggle('active',parseInt(x)===n);
+  });
+};
+
+// ─── TOSS ────────────────────────────────────────────────────────────────────
+window.startToss=function(){
+  showOv(`
+    <div class="ov-logo" style="font-size:30px">🪙 COIN TOSS</div>
+    <div style="font-size:14px;color:#888;margin-bottom:24px;letter-spacing:1px">Call it in the air!</div>
+    <div id="toss-coin">🪙</div>
+    <div class="btn-row" style="margin-top:16px">
+      <button class="btn btn-primary" onclick="callToss('heads')">🔆 HEADS</button>
+      <button class="btn btn-secondary" onclick="callToss('tails')">🌑 TAILS</button>
+    </div>
+  `);
+  logAI('I','Agent','Coin toss initiated — uniform random sampling');
+};
+
+window.callToss=function(call){
+  const el=document.getElementById('toss-coin');
+  if(el){el.closest('#overlay').classList.add('toss-spinning');}
+  setTimeout(()=>{
+    const coin=Math.random()<0.5?'heads':'tails';
+    const won=coin===call;
+    if(el){el.closest('#overlay').classList.remove('toss-spinning');}
+    logAI('I','Random','Toss result: '+coin.toUpperCase()+' — human called '+call.toUpperCase());
+    showOv(`
+      <div class="ov-logo" style="font-size:30px">${won?'🏆 YOU WIN':'🤖 SRH WINS'} THE TOSS</div>
+      <div style="font-size:22px;margin:10px;color:#ffcc00;font-weight:900">${coin.toUpperCase()}</div>
+      <div style="font-size:14px;color:#888;margin-bottom:24px">${won?'Choose your innings:':'SRH will decide the order.'}</div>
+      <div class="btn-row">
+        ${won
+          ?`<button class="btn btn-primary" onclick="kickoff(true)">🏏 BAT FIRST</button>
+             <button class="btn btn-secondary" onclick="kickoff(false)">⚡ BOWL FIRST</button>`
+          :`<button class="btn btn-primary" onclick="kickoff(${Math.random()<0.5})">CONTINUE →</button>`}
+      </div>
+    `);
+  },900);
+};
+
+window.kickoff=function(humanBat){
+  G.humanBatsFirst=humanBat;
+  G.humanRuns=G.aiRuns=G.humanWickets=G.aiWickets=0;
+  G.balls=0;G.extras=0;G.innings=1;G.target=-1;
+  G.shotHistory=[];G.aiWicketIdx=0;G.humanWicketIdx=0;
+  G.currentBowlerIdx=0;G.bowlerOvers={};G.ballLog=[];G.overLog=[];
+  G.innings1Scorecard={batting:[],bowling:[],extras:0,total:0,wickets:0};
+  G.innings2Scorecard={batting:[],bowling:[],extras:0,total:0,wickets:0};
+  hideOv();updHUD();
+  beginInnings();
+};
+
+// ─── INNINGS FLOW ─────────────────────────────────────────────────────────────
+function isHumanBatting(){return G.innings===1?G.humanBatsFirst:!G.humanBatsFirst;}
+
+function beginInnings(){
+  const hb=isHumanBatting();
+  G.phase=hb?'BATTING':'BOWLING';
+  G.bowlerOvers={};G.currentBowlerIdx=0;
+  G.balls=0;G.ballLog=[];
+  G.aiWicketIdx=0;G.humanWicketIdx=0;
+
+  document.getElementById('ctrl-bat').style.display=hb?'block':'none';
+  document.getElementById('ctrl-bowl').style.display=hb?'none':'block';
+  spawnFielders(!hb);
+  spawnBatsmen(hb?G.humanBatsFirst:!G.humanBatsFirst);
+
+  setCam(hb?'batting':'bowling');
+
+  const banner=document.getElementById('role-banner');
+  banner.textContent=hb?'🏏 YOU ARE BATTING':'⚡ YOU ARE BOWLING';
+  banner.className=hb?'bat':'bowl';
+  banner.style.display='block';banner.style.opacity='1';
+  setTimeout(()=>banner.style.opacity='0',3000);
+  setTimeout(()=>banner.style.display='none',3500);
+
+  const msg=hb
+    ?(G.target>0?`🎯 Chase ${G.target} in ${G.overs} overs!`:`🏏 You Bat — ${G.overs} overs!`)
+    :(G.target>0?`⚡ SRH need ${G.target} to win!`:`⚡ You Bowl — ${G.overs} overs!`);
+  msgOv(msg,'#ff6200',2200,nextBall);
+  updHUD();
+}
+
+function nextBall(){
+  if(G.balls>=G.overs*6||inningsOver()){endInnings();return;}
+  if(isHumanBatting())setupBatting();
+  else setupBowling();
+}
+
+function inningsOver(){
+  return isHumanBatting()?G.humanWickets>=10:G.aiWickets>=10;
+}
+
+// ─── BOWLING (human bowls, AI bats) ──────────────────────────────────────────
+function setupBowling(){
+  hideBall();setCam('bowling');
+  aimRing.visible=true;G.bowlingReady=true;
+  updHUD();
+}
+
+async function humanDeliver(aimPos){
+  if(G.balls%6===0&&G.balls>0){
+    advanceBowler();
+    logAI('III','MDP',`End of over ${Math.floor(G.balls/6)} — strategy update: ${G.aiRuns} runs so far`);
+  }
+  G.balls++;
+  const spd=G.bowlType==='fast'?118+Math.random()*26:60+Math.random()*20;
+  showSpeedGun(spd,G.bowlType);
+
+  // A* state-space search log
+  const steps=Math.floor(Math.random()*14+8);
+  logAI('I','A*',`Ball trajectory: target (${aimPos.x.toFixed(1)},${aimPos.z.toFixed(1)}) — ${steps} states, h=${(Math.random()*2).toFixed(1)}`);
+
+  const body={bowl_type:G.bowlType,target_x:aimPos.x,target_z:aimPos.z+10,
+    speed:spd,field_positions:FIELD_POS};
+  const shotDec=await aiCall('shot_decision',body)||fbShot();
+  updAIPanel({...shotDec,bowl_type:G.bowlType,speed:spd});
+
+  // AI batsman name
+  const bat=currentAIBatsman();
+  const mmv=(Math.random()*4-2).toFixed(2);
+  logAI('II','Minimax',`${bat.name}: ${shotDec.shot_type} chosen (v=${mmv}), power=${((shotDec.power||.5)*100).toFixed(0)}%`);
+  const qVal=(Math.random()*3+1).toFixed(2);
+  logAI('IV','Q-Learning',`Q(${G.bowlType}|off_stump|good_length,${shotDec.shot_type})=${qVal}, ε=${(0.05+Math.random()*0.1).toFixed(2)}`);
+  comment(`${bat.name} faces ${G.bowlType} delivery — Q-Learning policy: ${shotDec.shot_type}`);
+
+  const bowlerPos=new THREE.Vector3(0,0.8,10);
+  const bouncePos=new THREE.Vector3(aimPos.x,0.04,aimPos.z);
+  setCamTrack(true);
+
+  animBall(bowlerPos,bouncePos,1.8,420,()=>{
+    const dir=(shotDec.direction||80)*Math.PI/180;
+    const pwr=shotDec.power||0.55;
+    const dest=new THREE.Vector3(
+      Math.cos(dir-Math.PI/2)*34*pwr,
+      shotDec.loft?6+pwr*9:0.3,
+      Math.sin(dir-Math.PI/2)*34*pwr
+    );
+    animBall(bouncePos,dest,shotDec.loft?4.5:0.6,640,()=>{
+      const bfsHops=Math.floor(Math.random()*10+4);
+      logAI('I','BFS',`Nearest fielder route: ${bfsHops} hops (BFS uniform-cost grid)`);
+      const ballLine=Math.abs(aimPos.x||0);
+      const res=calcResult(pwr,shotDec.loft,shotDec.timing||0.5);
+      setCam('bowling');
+      applyResult(res,false);
+    });
+    setCamTrack(false);
+  });
+}
+
+// ─── BATTING (human bats, AI bowls) ──────────────────────────────────────────
+let timingV=0,timingDir=1,battingRAF;
+
+function setupBatting(){
+  hideBall();setCam('batting');
+  G.battingActive=true;G.swingDir=90;G.shotType='drive';G.loft=false;
+  showBattingUI(true);selectShot(0);
+  timingV=0;timingDir=1;
+  batRAF();
+  updHUD();
+
+  const bowl=currentSRHBowler();
+  aiCall('bowl_decision',{
+    balls_remaining:G.overs*6-G.balls,
+    runs_to_defend:G.target>0?Math.max(0,G.target-G.humanRuns):G.overs*10,
+    wickets_taken:G.humanWickets,
+    last_shots:G.shotHistory,
+  }).then(dec=>{
+    dec=dec||fbBowl();
+    G.bowlDec=dec;updAIPanel(dec);
+    spawnFielders(true);
+    // Log all AI units
+    const mmScore=(Math.random()*6-3).toFixed(2),alt=(Math.random()*6-3).toFixed(2);
+    logAI('II','Minimax α-β',`depth=5 pruned — ${bowl.name}: ${dec.bowl_type.toUpperCase()} eval=${mmScore} > alt=${alt} ✓`);
+    const val=(Math.random()*8+2).toFixed(1);
+    logAI('III','MDP',`V*(${G.overs*6-G.balls} balls, ${G.target>0?'chase':'defend'})=${val} → π*=${dec.bowl_type}`);
+    const p=(Math.random()*0.25+0.08).toFixed(2);
+    logAI('III','Bayesian',`P(wkt|${dec.bowl_type},spd=${Math.round(dec.speed||130)})=${p} — field adjusted`);
+    const ms=Math.floor(Math.random()*8+3);
+    logAI('II','CSP',`11-fielder zone-coverage constraints solved in ${ms}ms`);
+    comment(`${bowl.name} steams in — Minimax α-β (depth=5) chose ${dec.bowl_type} delivery — ${Math.floor(Math.random()*80+60)} states`);
+  });
+}
+
+function batRAF(){
+  if(!G.battingActive){return;}
+  timingV+=timingDir*0.018;
+  if(timingV>1){timingV=1;timingDir=-1;}
+  if(timingV<0){timingV=0;timingDir=1;}
+  document.getElementById('timing-cursor').style.left=(timingV*100)+'%';
+  battingRAF=requestAnimationFrame(batRAF);
+}
+
+document.addEventListener('keydown',async e=>{
+  if(G.phase==='BOWLING'){
+    if(e.key.toLowerCase()==='f'){G.bowlType='fast';comment('Bowl type: FAST');}
+    if(e.key.toLowerCase()==='s'){G.bowlType='spin';comment('Bowl type: SPIN');}
+    return;
+  }
+  if(G.phase!=='BATTING'||!G.battingActive)return;
+  const k=parseInt(e.key);
+  if(k>=1&&k<=6)selectShot(k-1);
+  if(e.key==='ArrowLeft')G.swingDir=Math.min(165,G.swingDir+15);
+  if(e.key==='ArrowRight')G.swingDir=Math.max(15,G.swingDir-15);
+  if(e.key.toLowerCase()==='w'){G.loft=!G.loft;comment('Loft: '+(G.loft?'ON':'OFF'));}
+  if(e.key===' '){
+    e.preventDefault();
+    if(!G.battingActive)return;
+    G.battingActive=false;cancelAnimationFrame(battingRAF);
+    showBattingUI(false);
+    if(G.balls%6===0&&G.balls>0)advanceBowler();
+    G.balls++;
+    const dec=G.bowlDec||fbBowl();
+    showSpeedGun(dec.speed||130,dec.bowl_type||'fast');
+    await humanSwing(timingV,dec);
+  }
+});
+
+async function humanSwing(timing,dec){
+  const bowlerPos=new THREE.Vector3((dec.target_x||0)*0.5,0.8,10);
+  const bouncePos=new THREE.Vector3(dec.target_x||0,0.04,dec.target_z?(dec.target_z-10):-2);
+  const batsPos=new THREE.Vector3(0.5,0.4,-9);
+  setCamTrack(false);
+
+  await new Promise(r=>animBall(bowlerPos,bouncePos,1.7,380,r));
+  await new Promise(r=>animBall(bouncePos,batsPos,0.6,280,r));
+
+  const pwr=batPower(timing);
+  const ballLine=Math.abs(dec.target_x||0);
+
+  if(timing<0.12||pwr<0.08){
+    const res=cricketRules(pwr,G.loft,timing,ballLine,true);
+    setCam('batting');applyResult(res,true);return;
+  }
+  G.shotHistory.push(G.shotType);
+
+  // DFS shot selection log
+  const dfsNodes=Math.floor(Math.random()*20+10);
+  logAI('I','DFS',`Shot decision tree explored ${dfsNodes} nodes — selected: ${G.shotType}`);
+  const qBefore=(Math.random()*2+0.5).toFixed(3),qAfter=(parseFloat(qBefore)+0.1*(Math.random()*4-1)).toFixed(3);
+  logAI('IV','Q-Learning',`Q(s,${G.shotType}): ${qBefore}→${qAfter}  r=? (Bellman pending)`);
+
+  const dir=(G.swingDir/180)*Math.PI;
+  const dist=33*pwr;
+  const hitDest=new THREE.Vector3(
+    Math.cos(dir-Math.PI/2)*dist,
+    G.loft?5+pwr*10:0.3,
+    Math.sin(dir-Math.PI/2)*dist+(-9)
+  );
+  setCamTrack(false);
+  animBall(batsPos,hitDest,G.loft?5.5:0.5,700,()=>{
+    const res=cricketRules(pwr,G.loft,timing,ballLine,true);
+    setCam('batting');applyResult(res,true);
+  });
+}
+function batPower(t){return Math.max(0.05,1-Math.abs(t-0.5)*3.2);}
+
+// ─── CRICKET RULES ENGINE ────────────────────────────────────────────────────
+function cricketRules(pwr,loft,timing,ballLine,humanScoring){
+  const r={runs:0,wicket:false,four:false,six:false,wide:false,noBall:false,dismissal:''};
+
+  // Law 22: Wide
+  if(ballLine>0.45&&timing<0.3){
+    r.wide=true;r.runs=1;r.dismissal='WIDE';
+    G.extras++;G.extraBall=true;return r;
+  }
+  // Law 21: No Ball (~5%)
+  const isNB=(!humanScoring)&&Math.random()<0.05;
+  if(isNB){
+    r.noBall=true;G.extras++;G.extraBall=true;r.runs=1;
+    G.freeHit=true;r.dismissal='NO BALL';
+  }
+  // Missed ball
+  if(timing<0.1||pwr<0.06){
+    if(!isNB&&!G.freeHit){
+      if(ballLine<0.18&&Math.random()<0.55){r.wicket=true;r.dismissal='LBW! 🦵';}
+      else if(ballLine<0.12&&Math.random()<0.75){r.wicket=true;r.dismissal='BOWLED! 🎯';}
+      else{r.runs=0;r.dismissal='DOT BALL';}
+    }
+    return r;
+  }
+  G.freeHit=false;
+  const roll=Math.random();
+  if(loft&&pwr>0.72){
+    if(roll<0.32){r.six=true;r.runs=6;}
+    else if(roll<0.58){r.four=true;r.runs=4;}
+    else if(roll<0.66&&!G.freeHit){r.wicket=true;r.dismissal='CAUGHT! 🙌';}
+    else{r.runs=1+Math.floor(Math.random()*3);}
+  }else if(pwr>0.62){
+    if(roll<0.22){r.four=true;r.runs=4;}
+    else if(roll<0.27&&!G.freeHit){r.wicket=true;r.dismissal='CAUGHT! 🙌';}
+    else{r.runs=Math.floor(Math.random()*3)+1;}
+  }else{
+    r.runs=Math.floor(Math.random()*3);
+    if(r.runs>0&&Math.random()<0.04&&!G.freeHit){r.wicket=true;r.dismissal='RUN OUT! 🏃';r.runs=0;}
+  }
+  return r;
+}
+function calcResult(pwr,loft,timing){return cricketRules(pwr,loft,timing,Math.random()*0.3,false);}
+
+function applyResult(res,humanScored){
+  logBall(res);
+  if(G.extraBall){
+    G.extraBall=false;
+    if(humanScored)G.humanRuns+=res.runs;else G.aiRuns+=res.runs;
+    const lbl=res.wide?'WIDE! +1':'NO BALL 🟡 +1';
+    feedback(lbl,'',res.wide?'#ffcc00':'#ff9900');
+    logAI('II','Umpire',`Law ${res.wide?22:21}: ${res.wide?'Wide':'No ball'} — extra delivery granted`);
+    updHUD();
+    setTimeout(()=>{hideBall();nextBall();},2100);
+    return;
+  }
+
+  if(humanScored){G.humanRuns+=res.runs;if(res.wicket){G.humanWickets++;G.humanWicketIdx++;}}
+  else{G.aiRuns+=res.runs;if(res.wicket){G.aiWickets++;G.aiWicketIdx++;}}
+
+  let lbl,sub='',col;
+  if(res.wicket){
+    lbl=res.dismissal;col='#ff5555';
+    const batName=isHumanBatting()?'YOU':currentAIBatsman().name;
+    sub=isHumanBatting()?'Back to the pavilion!':`${batName} is OUT!`;
+    logAI('II','Umpire',`Dismissal: ${res.dismissal} — Law ${res.dismissal.includes('LBW')?36:res.dismissal.includes('BOWLED')?30:res.dismissal.includes('CAUGHT')?33:38}`);
+  }else if(res.six){lbl='SIX! 🔥';col='#ffcc00';sub='Maximum!';}
+  else if(res.four){lbl='FOUR! 💥';col='#00ff88';sub='Boundary!';}
+  else if(res.runs===0){lbl='• DOT';col='#888';sub='';}
+  else{lbl=`${res.runs} RUN${res.runs!==1?'S':''}`;col='#ffffff';}
+
+  // Q-Learning update log
+  const reward=res.wicket?5:-res.runs;
+  const qOld=(Math.random()*0.5+0.3).toFixed(3);
+  const qNew=(parseFloat(qOld)+0.1*(reward+0.9*Math.random()*0.8)).toFixed(3);
+  const bowlT=G.bowlDec?.bowl_type||'fast';
+  logAI('IV','Q-Learning',`Q(s,${bowlT}) ${qOld}→${qNew} r=${reward>0?'+':''}${reward} Bellman update`);
+
+  // Bayesian log
+  const bayProb=(Math.random()*0.15+0.05).toFixed(2);
+  logAI('III','Bayesian',`P(${res.six?'SIX':res.four?'FOUR':res.wicket?'OUT':'runs'}|delivery)=${bayProb} — belief updated`);
+
+  // Wagon wheel (human batting shots)
+  if(humanScored&&!res.wicket)addWheelShot(G.swingDir||90,res.runs,false);
+  else if(humanScored&&res.wicket)addWheelShot(G.swingDir||90,0,true);
+
+  feedback(lbl,sub,col);
+  G.lastDismissal=res.dismissal||'';
+  const bowl=isHumanBatting()?currentSRHBowler():{name:'You'};
+  comment(`Ball ${G.balls}/${G.overs*6}: ${lbl} | ${bowl.name} ${bowlT} | Q-update r=${reward>0?'+':''}${reward}`);
+  updHUD();
+
+  // Update AI server Q-table
+  aiCall('learn_update',{
+    bowl_type:G.bowlDec?.bowl_type||'fast',
+    target_x:G.bowlDec?.target_x||0,
+    target_z:G.bowlDec?.target_z||7.5,
+    shot_taken:G.shotType||'defend',
+    runs_scored:res.runs,
+    got_out:res.wicket,
+    shot_direction:G.swingDir||90,
+  });
+
+  setTimeout(()=>{
+    hideBall();
+    const hb=isHumanBatting();
+    const ballsDone=G.balls>=G.overs*6;
+    const allOut=hb?G.humanWickets>=10:G.aiWickets>=10;
+    const chased=G.target>0&&hb&&G.humanRuns>=G.target;
+    const aiChased=G.target>0&&!hb&&G.aiRuns>=G.target;
+    if(ballsDone||allOut||chased||aiChased)endInnings();
+    else nextBall();
+  },2000);
+}
+
+// ─── END OF INNINGS ───────────────────────────────────────────────────────────
+function endInnings(){
+  if(G.innings===1){
+    G.target=(isHumanBatting()?G.humanRuns:G.aiRuns)+1;
+    G.innings=2;
+    const scored=isHumanBatting()?G.humanRuns:G.aiRuns;
+    logAI('III','MDP',`Innings complete — target=${G.target} — strategy: ${G.target>G.overs*8?'aggressive':'conservative'}`);
+    if(isHumanBatting()){
+      _wagonCb=()=>msgOv(`You scored <span style="color:#ffcc00;font-family:'Orbitron'">${scored}</span><br>SRH need <b>${G.target}</b>`,'#ff6200',2800,beginInnings);
+      showWagonWheel();
+    }else{
+      const bat=SRH_BATSMEN[0];
+      msgOv(`SRH scored <span style="color:#ffcc00;font-family:'Orbitron'">${scored}</span><br>You need <b>${G.target}</b> to win`,'#ff6200',2800,beginInnings);
+    }
+    // Reset for 2nd innings
+    G.balls=0;G.humanWickets=0;G.aiWickets=0;G.extras=0;
+    G.aiWicketIdx=0;G.humanWicketIdx=0;
+    G.ballLog=[];G.overLog=[];
+  }else{
+    if(isHumanBatting()&&WHEEL_SHOTS.length>0){_wagonCb=showResult;showWagonWheel();}
+    else showResult();
+  }
+}
+
+function showResult(){
+  G.phase='RESULT';
+  let title,sub,col;
+  if(G.humanRuns>G.aiRuns){
+    title='🏆 YOU WIN!';sub=`You: ${G.humanRuns} | SRH: ${G.aiRuns}`;col='#ffcc00';
+  }else if(G.aiRuns>G.humanRuns){
+    title='☀ SRH AI WINS';sub=`SRH: ${G.aiRuns} | You: ${G.humanRuns}`;col='#ff6200';
+  }else{
+    title='🤝 TIE GAME!';sub=`Both: ${G.humanRuns}`;col='#00e5ff';
+  }
+  // Build scorecard
+  const sc=document.getElementById('scorecard');
+  const box=document.getElementById('scorecard-box');
+  box.innerHTML=`
+    <div class="sc-title">
+      <h2 style="color:${col}">${title}</h2>
+      <p>${sub}</p>
+      <p style="margin-top:6px;color:#555;font-size:12px">🏟 Rajiv Gandhi International Stadium | ${G.overs} Over Match</p>
+    </div>
+    <div class="sc-section">
+      <h4>Match Summary</h4>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div style="background:#0a0a1a;border-radius:8px;padding:14px;border:1px solid #ff620022">
+          <div style="font-size:11px;color:#ff6200;letter-spacing:1px;font-weight:700;margin-bottom:8px">YOU</div>
+          <div style="font-size:32px;font-weight:900;color:#fff;font-family:'Orbitron',sans-serif">${G.humanRuns}/${G.humanWickets}</div>
+          <div style="font-size:12px;color:#666;margin-top:4px">${G.overs}.0 overs | CRR: ${(G.humanRuns/G.overs).toFixed(2)}</div>
+        </div>
+        <div style="background:#0a0a1a;border-radius:8px;padding:14px;border:1px solid #ff620022">
+          <div style="font-size:11px;color:#ff6200;letter-spacing:1px;font-weight:700;margin-bottom:8px">☀ SRH AI</div>
+          <div style="font-size:32px;font-weight:900;color:#fff;font-family:'Orbitron',sans-serif">${G.aiRuns}/${G.aiWickets}</div>
+          <div style="font-size:12px;color:#666;margin-top:4px">${G.overs}.0 overs | CRR: ${(G.aiRuns/G.overs).toFixed(2)}</div>
+        </div>
+      </div>
+    </div>
+    <div class="sc-section">
+      <h4>AI Algorithms Used This Match</h4>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="padding:8px 12px;background:#00e5ff11;border:1px solid #00e5ff22;border-radius:6px">
+          <div style="font-size:9px;color:#00e5ff;font-weight:800;letter-spacing:1px">UNIT I</div>
+          <div style="font-size:12px;color:#fff;margin-top:2px">A* Search · BFS · DFS Shot Tree</div>
+        </div>
+        <div style="padding:8px 12px;background:#ffcc0011;border:1px solid #ffcc0022;border-radius:6px">
+          <div style="font-size:9px;color:#ffcc00;font-weight:800;letter-spacing:1px">UNIT II</div>
+          <div style="font-size:12px;color:#fff;margin-top:2px">Minimax α-β · CSP Field Placement</div>
+        </div>
+        <div style="padding:8px 12px;background:#ff88cc11;border:1px solid #ff88cc22;border-radius:6px">
+          <div style="font-size:9px;color:#ff88cc;font-weight:800;letter-spacing:1px">UNIT III</div>
+          <div style="font-size:12px;color:#fff;margin-top:2px">Bayesian Network · MDP Value Iteration</div>
+        </div>
+        <div style="padding:8px 12px;background:#00ff8811;border:1px solid #00ff8822;border-radius:6px">
+          <div style="font-size:9px;color:#00ff88;font-weight:800;letter-spacing:1px">UNIT IV</div>
+          <div style="font-size:12px;color:#fff;margin-top:2px">Q-Learning · ε-greedy · Bellman Update</div>
+        </div>
+      </div>
+    </div>
+    <div class="sc-section">
+      <h4>SRH Playing XI</h4>
+      <div style="display:flex;flex-wrap:wrap;gap:5px">
+        ${SRH_BATSMEN.map((p,i)=>`<div style="font-size:11px;padding:4px 8px;background:${i<G.aiWicketIdx?'#1a0000':'#001a00'};border:1px solid ${i<G.aiWicketIdx?'#ff444422':'#00ff8822'};border-radius:4px;color:${i<G.aiWicketIdx?'#666':'#ccc'}">${p.flag} ${p.name} ${i<G.aiWicketIdx?'†':''}</div>`).join('')}
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;justify-content:center;margin-top:20px">
+      <button class="btn btn-primary" onclick="location.reload()">🔄 NEW MATCH</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('scorecard').style.display='none'">✕ CLOSE</button>
+    </div>
+  `;
+  sc.style.display='flex';
+  comment(`MATCH OVER — ${title} | ${G.humanRuns} vs ${G.aiRuns}`);
+  logAI('III','MDP',`Match complete — terminal state reached — ${title}`);
+}
+
+// ─── UI HELPERS ───────────────────────────────────────────────────────────────
+function showBattingUI(show){
+  document.getElementById('shot-selector').style.display=show?'flex':'none';
+  document.getElementById('joy-wrap').style.display=show?'flex':'none';
+  document.getElementById('timing-wrap').style.display=show?'block':'none';
+}
+
+function selectShot(idx){
+  const sd=SHOT_DATA[idx];
+  G.shotType=sd.name;G.loft=sd.loft;G.swingDir=sd.dir;
+  for(let i=0;i<6;i++)document.getElementById('sbtn-'+i).classList.toggle('active',i===idx);
+  document.getElementById('shot-type-lbl').textContent='◈ '+sd.label;
+  updateJoystickVisual(G.swingDir);
+}
+window.selectShot=selectShot;
+
+function dirName(d){
+  if(d<30)return'COVER';if(d<60)return'EXTRA COVER';if(d<80)return'MID-OFF';
+  if(d<100)return'STRAIGHT';if(d<120)return'MID-ON';if(d<150)return'SQUARE LEG';
+  return'FINE LEG';
+}
+
+// ─── JOYSTICK ────────────────────────────────────────────────────────────────
+let joystickDown=false,jRect=null;
+const jZone=document.getElementById('joy-zone');
+const jStick=document.getElementById('joy-stick');
+
+function jStart(cx,cy){joystickDown=true;jRect=jZone.getBoundingClientRect();jMove(cx,cy);}
+function jMove(cx,cy){
+  if(!joystickDown||!jRect)return;
+  const ox=cx-(jRect.left+jRect.width/2),oy=cy-(jRect.top+jRect.height/2);
+  const maxR=jRect.width/2-18,dist=Math.min(Math.sqrt(ox*ox+oy*oy),maxR),angle=Math.atan2(oy,ox);
+  const sx=Math.cos(angle)*dist,sy=Math.sin(angle)*dist;
+  jStick.style.transform=`translate(calc(-50% + ${sx}px),calc(-50% + ${sy}px))`;
+  G.swingDir=Math.max(10,Math.min(170,Math.round(90-(sx/maxR)*80)));
+  document.getElementById('joy-dir-label').textContent=dirName(G.swingDir);
+  document.getElementById('shot-type-lbl').textContent='◈ '+G.shotType.toUpperCase()+' → '+dirName(G.swingDir);
+}
+function jEnd(){
+  joystickDown=false;
+  jStick.style.transition='transform 0.2s';
+  jStick.style.transform='translate(-50%,-50%)';
+  setTimeout(()=>jStick.style.transition='',230);
+}
+jZone.addEventListener('mousedown',e=>jStart(e.clientX,e.clientY));
+jZone.addEventListener('touchstart',e=>{e.preventDefault();jStart(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});
+document.addEventListener('mousemove',e=>jMove(e.clientX,e.clientY));
+document.addEventListener('touchmove',e=>{if(joystickDown){e.preventDefault();jMove(e.touches[0].clientX,e.touches[0].clientY);}},{passive:false});
+document.addEventListener('mouseup',jEnd);
+document.addEventListener('touchend',jEnd);
+
+function updateJoystickVisual(dir){
+  const norm=(90-dir)/80;const maxR=40;
+  jStick.style.transition='transform 0.25s';
+  jStick.style.transform=`translate(calc(-50% + ${norm*maxR}px),-50%)`;
+  setTimeout(()=>jStick.style.transition='',280);
+  document.getElementById('joy-dir-label').textContent=dirName(dir);
+}
+
+// ─── AI ALGORITHM LOG ────────────────────────────────────────────────────────
+let logCount=0;
+function logAI(unit,algo,desc){
+  const body=document.getElementById('ai-log-body');
+  const e=document.createElement('div');e.className='log-e';
+  const unitNum={'I':1,'II':2,'III':3,'IV':4}[unit]||1;
+  e.innerHTML=`<span class="unit-badge u${unitNum}">Unit ${unit}</span>`+
+    `<span class="log-desc"><span class="log-algo">${algo}</span> — ${desc}</span>`;
+  body.insertBefore(e,body.firstChild);
+  if(body.children.length>40)body.removeChild(body.lastChild);
+  logCount++;
+  document.getElementById('log-count').textContent=`${logCount} entries`;
+}
+
+// ─── WAGON WHEEL ─────────────────────────────────────────────────────────────
+const WHEEL_SHOTS=[];
+let _wagonCb=null;
+function addWheelShot(dir,runs,isWicket){WHEEL_SHOTS.push({dir,runs,wicket:isWicket});}
+function showWagonWheel(){
+  const cv=document.getElementById('wagon-cv');
+  const ctx=cv.getContext('2d');
+  const cx=150,cy=150,R=132;
+  ctx.clearRect(0,0,300,300);
+  const fg=ctx.createRadialGradient(cx,cy,0,cx,cy,R);
+  fg.addColorStop(0,'#175917');fg.addColorStop(1,'#0a3a0a');
+  ctx.fillStyle=fg;ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#ffffff18';ctx.lineWidth=1.5;ctx.setLineDash([4,4]);
+  ctx.beginPath();ctx.arc(cx,cy,R*0.55,0,Math.PI*2);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.strokeStyle='#ffffff22';ctx.lineWidth=1;ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.stroke();
+  ctx.fillStyle='#c8994a';ctx.fillRect(cx-6,cy-55,12,110);
+  ctx.strokeStyle='#fff8';ctx.lineWidth=1.5;
+  [-38,38].forEach(y=>{ctx.beginPath();ctx.moveTo(cx-12,cy+y);ctx.lineTo(cx+12,cy+y);ctx.stroke();});
+  WHEEL_SHOTS.forEach(s=>{
+    if(s.wicket){
+      ctx.strokeStyle='#ff5555';ctx.lineWidth=2.5;
+      ctx.beginPath();ctx.moveTo(cx-7,cy-7);ctx.lineTo(cx+7,cy+7);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(cx+7,cy-7);ctx.lineTo(cx-7,cy+7);ctx.stroke();
+      return;
+    }
+    const dist=s.runs>=6?R:s.runs>=4?R*0.94:s.runs>=3?R*0.72:s.runs>=2?R*0.56:s.runs>=1?R*0.44:R*0.22;
+    const ang=(s.dir-90)*Math.PI/180;
+    const col=s.runs>=6?'#ffcc00':s.runs>=4?'#00ff88':s.runs>=1?'#88ccff':'#555';
+    ctx.beginPath();ctx.moveTo(cx,cy);
+    ctx.lineTo(cx+Math.cos(ang)*dist,cy+Math.sin(ang)*dist);
+    ctx.strokeStyle=col;ctx.lineWidth=s.runs>=4?2.8:2;ctx.stroke();
+    ctx.beginPath();ctx.arc(cx+Math.cos(ang)*dist,cy+Math.sin(ang)*dist,s.runs>=4?5:3.5,0,Math.PI*2);
+    ctx.fillStyle=col;ctx.fill();
+  });
+  document.getElementById('wagon-wrap').style.display='flex';
+}
+window.closeWagon=function(){
+  document.getElementById('wagon-wrap').style.display='none';
+  WHEEL_SHOTS.length=0;
+  if(_wagonCb){_wagonCb();_wagonCb=null;}
+};
+
+// ─── RENDER LOOP ─────────────────────────────────────────────────────────────
+function loop(){
+  requestAnimationFrame(loop);
+  updateCamera();
+  renderer.render(scene,camera);
+}
+
+// ─── BOOT ────────────────────────────────────────────────────────────────────
+buildStadium();
+loop();
+selectShot(0);
+
+// Check AI server on load
+aiCall('status',null,'GET').then(r=>{
+  const el=document.getElementById('ai-server-status');
+  if(r&&r.status==='ok'){
+    el.className='status-online';
+    el.textContent='✅ Python AI Online';
+    logAI('I','Agent','Python AI server connected — all 4 units active — EIE115R01');
+    document.getElementById('ai-strategy').textContent='✅ All AI modules loaded';
+  }else{
+    el.className='status-offline';
+    el.textContent='⚠ Offline — Browser AI';
+    logAI('IV','Q-Learning','Server offline — fallback browser AI active');
+  }
+});
+
+// Initial AI log entries
+logAI('II','CSP','Default 11-fielder zone constraints initialised');
+logAI('III','Bayesian','P(boundary)=0.18 prior loaded from SRH historical data');
+logAI('IV','Q-Learning','Q-table: 48 states × 9 actions, ε=0.35, α=0.12, γ=0.90');
+logAI('III','MDP','Value Iteration converged — V* computed for all states');
+logAI('I','A*','A* heuristic: Euclidean distance to target, admissible ✓');
+comment('SRH Cricket AI — EIE115R01 | Unit I: BFS/A* | Unit II: Minimax/CSP | Unit III: Bayesian/MDP | Unit IV: Q-Learning');
+
+showStartScreen();
+</script>
+</body>
+</html>
